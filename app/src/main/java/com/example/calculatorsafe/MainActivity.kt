@@ -18,8 +18,11 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -34,6 +37,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -49,6 +53,8 @@ import javax.crypto.spec.SecretKeySpec
 class MainActivity : AppCompatActivity() {
     private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumsDir: File
+    private lateinit var albumAdapter: AlbumAdapter
+
     companion object{
 
     }
@@ -59,6 +65,8 @@ class MainActivity : AppCompatActivity() {
 
         val fab: FloatingActionButton = findViewById(R.id.fab)
         val mainRecyclerView: RecyclerView = findViewById(R.id.main_RecyclerView)
+        val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
 
         albumsDir = File(this.filesDir, "Albums")
@@ -67,19 +75,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
-        val albums = getAlbums() // Fetch albums and photo count
-        mainRecyclerView.adapter = AlbumAdapter(albums)
+        val albums = getAlbums().toMutableList() // Fetch albums and photo count
+        albumAdapter = AlbumAdapter(albums) { album ->
+            openAlbum(album)
+        }
+        mainRecyclerView.adapter = albumAdapter
 
 
         fab.setOnClickListener {  // Register ActivityResult handler
             // Register your observer here
             checkAndRequestPermissions()
-        }
-
-
-        val fileNames = getAllEncryptedFileNames(this)
-        fileNames.forEach {
-            Log.e("filenames", it)
         }
 
 
@@ -95,11 +100,66 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun createAlbum(albumName: String) {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
 
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_new_album -> {
+                // Handle "New Album" action
+                createNewAlbum()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun openAlbum(album: Album) {
+        val intent = Intent(this, AlbumActivity::class.java)
+        intent.putExtra("albumName", album.name)
+        startActivity(intent)
+    }
+
+    private fun createNewAlbum() {
+        // Logic for creating a new album (e.g., show a dialog to enter album name)
+        // For simplicity, let's assume you have a method to show an input dialog
+        showNewAlbumDialog()
+    }
+
+    private fun showNewAlbumDialog() {
+        val editText = EditText(this)
+        editText.hint = "Enter album name"
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("New Album")
+            .setView(editText)
+            .setPositiveButton("Create") { _, _ ->
+                val albumName = editText.text.toString().trim()
+                if (albumName.isNotEmpty()) {
+                    createAlbum(albumName)
+                    // Refresh the RecyclerView
+                    albumAdapter.notifyDataSetChanged()
+                } else {
+                    Toast.makeText(this, "Album name cannot be empty", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+    }
+
+
+    private fun createAlbum(albumName: String) {
         val albumDir = File(albumsDir, albumName)
         if (!albumDir.exists()) {
+            Log.e("Tes", "Creating album directory: $albumDir")
             albumDir.mkdirs()
+            // Add new album to the list and update RecyclerView
+            val newAlbum = Album(albumName, 0)
+            albumAdapter.addAlbum(newAlbum) // Implement this method in your adapter
         }
     }
 
@@ -111,9 +171,6 @@ class MainActivity : AppCompatActivity() {
             Album(dir.name, photoCount)
         }
     }
-
-
-
 
 
     private fun checkAndRequestPermissions() {
@@ -255,12 +312,21 @@ class MainActivity : AppCompatActivity() {
         return albumDirectory
     }
 
-    class AlbumAdapter(private val albums: List<Album>) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
+    class AlbumAdapter(
+        private val albums: MutableList<Album>,
+        private val onAlbumClick: (Album) -> Unit
+    ) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
 
-        class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        inner class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val albumThumbnail: ImageView = view.findViewById(R.id.album_thumbnail)
             val albumName: TextView = view.findViewById(R.id.album_name)
             val photoCount: TextView = view.findViewById(R.id.photo_count)
+
+            init {
+                view.setOnClickListener {
+                    onAlbumClick(albums[adapterPosition])
+                }
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
@@ -277,9 +343,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun getItemCount(): Int = albums.size
+
+        fun addAlbum(album: Album) {
+            albums.add(album)
+            notifyItemInserted(albums.size - 1)
+        }
     }
 
 
-    data class MediaItem(val id: Long, val uri: Uri)
     data class Album(val name: String, val photoCount: Int)
 }
