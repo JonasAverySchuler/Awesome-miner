@@ -17,6 +17,10 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +32,7 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
@@ -43,7 +48,7 @@ import javax.crypto.spec.SecretKeySpec
 
 class MainActivity : AppCompatActivity() {
     private val REQUEST_CODE_READ_MEDIA = 1001
-
+    private lateinit var albumsDir: File
     companion object{
 
     }
@@ -56,10 +61,22 @@ class MainActivity : AppCompatActivity() {
         val mainRecyclerView: RecyclerView = findViewById(R.id.main_RecyclerView)
 
 
+        albumsDir = File(this.filesDir, "Albums")
+        if (!albumsDir.exists()) {
+            albumsDir.mkdirs() // Create albums directory if it doesn't exist
+        }
+
+        mainRecyclerView.layoutManager = LinearLayoutManager(this)
+        val albums = getAlbums() // Fetch albums and photo count
+        mainRecyclerView.adapter = AlbumAdapter(albums)
+
+
         fab.setOnClickListener {  // Register ActivityResult handler
             // Register your observer here
             checkAndRequestPermissions()
         }
+
+
         val fileNames = getAllEncryptedFileNames(this)
         fileNames.forEach {
             Log.e("filenames", it)
@@ -77,6 +94,27 @@ class MainActivity : AppCompatActivity() {
             //show calculatavtivity and let t hem enter code
         }
     }
+
+    private fun createAlbum(albumName: String) {
+
+        val albumDir = File(albumsDir, albumName)
+        if (!albumDir.exists()) {
+            albumDir.mkdirs()
+        }
+    }
+
+
+    fun getAlbums(): List<Album> {
+        val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return emptyList()
+        return albumDirs.map { dir ->
+            val photoCount = dir.listFiles()?.size ?: 0
+            Album(dir.name, photoCount)
+        }
+    }
+
+
+
+
 
     private fun checkAndRequestPermissions() {
         val permissionsNeeded = mutableListOf<String>()
@@ -217,5 +255,31 @@ class MainActivity : AppCompatActivity() {
         return albumDirectory
     }
 
+    class AlbumAdapter(private val albums: List<Album>) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
+
+        class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val albumThumbnail: ImageView = view.findViewById(R.id.album_thumbnail)
+            val albumName: TextView = view.findViewById(R.id.album_name)
+            val photoCount: TextView = view.findViewById(R.id.photo_count)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
+            return AlbumViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: AlbumViewHolder, position: Int) {
+            val album = albums[position]
+            // Set album thumbnail (if applicable), name, and photo count
+            holder.albumName.text = album.name
+            holder.photoCount.text = "${album.photoCount} photos"
+            // Set a placeholder or real image if available
+        }
+
+        override fun getItemCount(): Int = albums.size
+    }
+
+
     data class MediaItem(val id: Long, val uri: Uri)
+    data class Album(val name: String, val photoCount: Int)
 }
