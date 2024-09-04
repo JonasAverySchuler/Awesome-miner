@@ -6,6 +6,7 @@ import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.app.Activity
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -16,6 +17,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -37,6 +40,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.calculatorsafe.EncryptionUtils.generateAESKey
+import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
@@ -44,9 +49,12 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.security.Key
+import java.security.KeyStore
+import java.util.UUID
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream
 import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
@@ -68,14 +76,13 @@ class MainActivity : AppCompatActivity() {
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-
         albumsDir = File(this.filesDir, "Albums")
         if (!albumsDir.exists()) {
             albumsDir.mkdirs() // Create albums directory if it doesn't exist
         }
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
-        val albums = getAlbums().toMutableList() // Fetch albums and photo count
+        val albums = getAlbums(this).toMutableList() // Fetch albums and photo count
         albumAdapter = AlbumAdapter(albums) { album ->
             openAlbum(album)
         }
@@ -109,7 +116,7 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_new_album -> {
                 // Handle "New Album" action
-                createNewAlbum()
+                createNewAlbum(this)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -118,17 +125,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun openAlbum(album: Album) {
         val intent = Intent(this, AlbumActivity::class.java)
+        Log.e("MainActivity", "album name: ${album.name} album id: ${album.albumID}") //album.albumID is empty bug atm
         intent.putExtra("albumName", album.name)
+        intent.putExtra("keystoreAlias", album.albumID)
         startActivity(intent)
     }
 
-    private fun createNewAlbum() {
+    private fun createNewAlbum(context: Context) {
         // Logic for creating a new album (e.g., show a dialog to enter album name)
         // For simplicity, let's assume you have a method to show an input dialog
-        showNewAlbumDialog()
+        showNewAlbumDialog(context)
     }
 
-    private fun showNewAlbumDialog() {
+    private fun showNewAlbumDialog(context: Context) {
         val editText = EditText(this)
         editText.hint = "Enter album name"
 
@@ -138,7 +147,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("Create") { _, _ ->
                 val albumName = editText.text.toString().trim()
                 if (albumName.isNotEmpty()) {
-                    createAlbum(albumName)
+                    createAlbum(context,albumName)
                     // Refresh the RecyclerView
                     albumAdapter.notifyDataSetChanged()
                 } else {
@@ -152,24 +161,83 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun createAlbum(albumName: String) {
+    private fun createAlbum(context: Context,albumName: String) {
         val albumDir = File(albumsDir, albumName)
         if (!albumDir.exists()) {
-            Log.e("Tes", "Creating album directory: $albumDir")
             albumDir.mkdirs()
             // Add new album to the list and update RecyclerView
-            val newAlbum = Album(albumName, 0)
+            val albumId = generateAlbumId()
+            generateAndStoreKey(context, albumId)
+            saveAlbumMetadata(context, albumName, albumId)
+            val newAlbum = Album(albumName, 0, albumId)
             albumAdapter.addAlbum(newAlbum) // Implement this method in your adapter
         }
     }
 
+    fun loadAlbum(context: Context, albumName: String) {
+        //val key = getKeyForAlbum(context, albumName)
+        // Use the key to decrypt and display photos
+    }
 
-    fun getAlbums(): List<Album> {
+    fun saveAlbumMetadata(context: Context, albumName: String, albumId: String) {
+        val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
+        prefs.edit().putString(albumName, albumId).apply()
+    }
+
+    fun getAlbumId(context: Context, albumName: String): String? {
+        val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
+        return prefs.getString(albumName, null)
+    }
+
+    fun getKeyForAlbum(context: Context, albumName: String): SecretKey? {
+        val albumId = getAlbumId(context, albumName) ?: return null
+        return getKey(context, albumId)
+    }
+
+    fun getKey(context: Context, albumId: String): SecretKey? {
+        return try {
+            // Initialize the KeyStore
+            val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+
+            // Retrieve the key from the KeyStore using the alias
+            val key = keyStore.getKey(albumId, null)
+
+            // Return the key if it's an instance of SecretKey
+            if (key is SecretKey) key else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun updateAlbumName(context: Context, oldAlbumName: String, newAlbumName: String) {
+        val albumId = getAlbumId(context, oldAlbumName) ?: return
+        saveAlbumMetadata(context, newAlbumName, albumId)
+        // Optionally remove old metadata
+        val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
+        prefs.edit().remove(oldAlbumName).apply()
+    }
+
+    fun generateAndStoreKey(context: Context, albumId: String) {
+        val keyGen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        val keyGenSpec = KeyGenParameterSpec.Builder(albumId, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+            .build()
+        keyGen.init(keyGenSpec)
+        keyGen.generateKey()
+    }
+
+    fun getAlbums(context: Context): List<Album> {
         val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return emptyList()
         return albumDirs.map { dir ->
             val photoCount = dir.listFiles()?.size ?: 0
-            Album(dir.name, photoCount)
+            Album(dir.name, photoCount, getAlbumId(context, dir.name) ?: "")
         }
+    }
+
+    fun generateAlbumId(): String {
+        return UUID.randomUUID().toString()
     }
 
 
@@ -222,12 +290,6 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Permissions denied", Toast.LENGTH_SHORT).show()
         //show dialog telling user permissions are required and to enable them to access features
 
-    }
-
-    private fun generateAESKey(): ByteArray {
-        val keyGen = KeyGenerator.getInstance("AES")
-        keyGen.init(128) // 128-bit key size
-        return keyGen.generateKey().encoded
     }
 
     private fun encryptImage(bitmap: Bitmap, key: ByteArray): ByteArray {
@@ -292,24 +354,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleSelectedMedia(mediaUri: Uri) {
         val key = generateAESKey()
-        val bitmap = getBitmapFromUri(mediaUri)
+        val bitmap = getBitmapFromUri(contentResolver, mediaUri)
         val encryptedImage = encryptImage(bitmap, key)
         val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage)
         //deleteImageFromUri(mediaUri)
         //addImageToAlbum(encryptedImagePath)
-    }
-
-    private fun getBitmapFromUri(uri: Uri): Bitmap {
-        val source = ImageDecoder.createSource(contentResolver, uri)
-        return ImageDecoder.decodeBitmap(source)
-    }
-
-    private fun createAlbumDirectory(context: Context, albumName: String): File {
-        val albumDirectory = File(context.filesDir, "albums/$albumName")
-        if (!albumDirectory.exists()) {
-            albumDirectory.mkdirs()
-        }
-        return albumDirectory
     }
 
     class AlbumAdapter(
@@ -351,5 +400,5 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    data class Album(val name: String, val photoCount: Int)
+    data class Album(val name: String, val photoCount: Int, val albumID: String)
 }
