@@ -18,10 +18,7 @@ class MediaViewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_media_view)
 
-        val fab: FloatingActionButton = findViewById(R.id.fab)
-        val mainRecyclerView: RecyclerView = findViewById(R.id.main_RecyclerView)
-        val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        //setSupportActionBar(toolbar)
 
     }
 }
