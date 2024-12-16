@@ -133,7 +133,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun createNewAlbum(context: Context) {
         // Logic for creating a new album (e.g., show a dialog to enter album name)
-        // For simplicity, let's assume you have a method to show an input dialog
         showNewAlbumDialog(context)
     }
 
@@ -166,7 +165,8 @@ class MainActivity : AppCompatActivity() {
         if (!albumDir.exists()) {
             albumDir.mkdirs()
             // Add new album to the list and update RecyclerView
-            val albumId = generateAlbumId()
+            val albumId = generateAlbumId() //returning empty string for now
+            Log.e("MainActivity 1", "album name: $albumName album id: $albumId")
             generateAndStoreKey(context, albumId)
             saveAlbumMetadata(context, albumName, albumId)
             val newAlbum = Album(albumName, 0, albumId)
@@ -379,7 +379,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
+                val view = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
             return AlbumViewHolder(view)
         }
 
