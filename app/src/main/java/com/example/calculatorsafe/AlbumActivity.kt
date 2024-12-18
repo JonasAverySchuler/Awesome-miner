@@ -100,7 +100,6 @@ class AlbumActivity : AppCompatActivity() {
 
     private fun generateAndStoreKey(albumId: String): SecretKey {
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        Log.e("AlbumActivity", "albumId: $albumId")
         val keyGenParameterSpec = KeyGenParameterSpec.Builder(albumId, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
@@ -112,7 +111,6 @@ class AlbumActivity : AppCompatActivity() {
 
 
     private fun getKeyForAlbum(albumId: String): SecretKey {
-        Log.e("AlbumActivity", "albumId: $albumId")
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         var key = keyStore.getKey(albumId, null) as? SecretKey
 
@@ -159,7 +157,7 @@ class AlbumActivity : AppCompatActivity() {
             val encryptedPhoto = encryptPhoto(byteArray, secretKey)
             if (encryptedPhoto != null) {
                 saveEncryptedPhoto(this, encryptedPhoto, "photo_${System.currentTimeMillis()}.png")
-                deleteOriginalPhoto(contentResolver, uri)
+                //deleteOriginalPhoto(contentResolver, uri)
 
                 // Refresh your RecyclerView
                 //loadPhotos()
@@ -230,16 +228,6 @@ class AlbumActivity : AppCompatActivity() {
             null
         }
     }
-
-    fun deleteOriginalPhoto(contentResolver: ContentResolver, uri: Uri) {
-        try {
-            contentResolver.delete(uri, null, null)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-
 
     class PhotoAdapter(private val photos: List<Bitmap>) : RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder>() {
 
