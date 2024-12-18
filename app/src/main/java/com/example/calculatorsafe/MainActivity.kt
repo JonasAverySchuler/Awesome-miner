@@ -62,6 +62,7 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumsDir: File
     private lateinit var albumAdapter: AlbumAdapter
+    private var targetAlbum: Album? = null
 
     companion object{
 
@@ -91,7 +92,8 @@ class MainActivity : AppCompatActivity() {
 
         fab.setOnClickListener {  // Register ActivityResult handler
             // Register your observer here
-            checkAndRequestPermissions()
+            openAlbumSelector(this)
+            //checkAndRequestPermissions()
         }
 
 
@@ -103,7 +105,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             Toast.makeText(this, "Passcode has been set before", Toast.LENGTH_SHORT).show()
             // Passcode already set, proceed with normal flow
-            //show calculatavtivity and let t hem enter code
         }
     }
 
@@ -123,9 +124,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun openAlbumSelector(context: Context) {
+        val albums = getAlbums(context).toMutableList() // Replace with your method to fetch album names
+        val albumNames = albums.map { it.name }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle("Choose an Album")
+            .setItems(albumNames) { _, which ->
+                targetAlbum = albums[which]
+                checkAndRequestPermissions()
+                //openMediaPicker(selectedAlbum) // Pass the selected album
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun getAlbumPath(albumName: String): String {
+        val albumDir = File(albumsDir, albumName)
+
+        // Ensure the album directory exists
+        if (!albumDir.exists()) {
+            albumDir.mkdirs() // Create directory if it doesn't exist
+        }
+
+        return albumDir.absolutePath
+    }
+
     private fun openAlbum(album: Album) {
         val intent = Intent(this, AlbumActivity::class.java)
-        Log.e("MainActivity", "album name: ${album.name} album id: ${album.albumID}") //album.albumID is empty bug atm
         intent.putExtra("albumName", album.name)
         intent.putExtra("keystoreAlias", album.albumID)
         startActivity(intent)
@@ -159,14 +185,12 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-
     private fun createAlbum(context: Context,albumName: String) {
         val albumDir = File(albumsDir, albumName)
         if (!albumDir.exists()) {
             albumDir.mkdirs()
             // Add new album to the list and update RecyclerView
             val albumId = generateAlbumId() //returning empty string for now
-            Log.e("MainActivity 1", "album name: $albumName album id: $albumId")
             generateAndStoreKey(context, albumId)
             saveAlbumMetadata(context, albumName, albumId)
             val newAlbum = Album(albumName, 0, albumId)
@@ -289,7 +313,6 @@ class MainActivity : AppCompatActivity() {
         // Show a message to the user explaining why the permission is needed
         Toast.makeText(this, "Permissions denied", Toast.LENGTH_SHORT).show()
         //show dialog telling user permissions are required and to enable them to access features
-
     }
 
     private fun encryptImage(bitmap: Bitmap, key: ByteArray): ByteArray {
@@ -317,8 +340,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveEncryptedImageToStorage(encryptedImage: ByteArray): String {
-        val file = File(getExternalFilesDir(null), "encrypted_image.png")
+    private fun saveEncryptedImageToStorage(encryptedImage: ByteArray, targetAlbum: Album?): String {
+        val albumDir = File(getAlbumPath(targetAlbum?.name ?: "default"))
+        if (!albumDir.exists()) {
+            albumDir.mkdirs() // Create the album directory if it doesn't exist
+        }
+
+        // Generate a unique file name
+        val fileName = "IMG_${System.currentTimeMillis()}.enc"
+        val file = File(albumDir, fileName)
+
         FileOutputStream(file).use {
             it.write(encryptedImage)
         }
@@ -356,9 +387,8 @@ class MainActivity : AppCompatActivity() {
         val key = generateAESKey()
         val bitmap = getBitmapFromUri(contentResolver, mediaUri)
         val encryptedImage = encryptImage(bitmap, key)
-        val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage)
+        val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage, targetAlbum)
         //deleteImageFromUri(mediaUri)
-        //addImageToAlbum(encryptedImagePath)
     }
 
     class AlbumAdapter(
