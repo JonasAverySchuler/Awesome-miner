@@ -162,6 +162,7 @@ class MainActivity : AppCompatActivity() {
     private fun openAlbum(album: Album) {
         val intent = Intent(this, AlbumActivity::class.java)
         intent.putExtra("albumName", album.name)
+        intent.putExtra("directoryPath", getAlbumPath(album.name))
         intent.putExtra("keystoreAlias", album.albumID)
         startActivity(intent)
     }
@@ -205,11 +206,6 @@ class MainActivity : AppCompatActivity() {
             val newAlbum = Album(albumName, 0, albumId)
             albumAdapter.addAlbum(newAlbum) // Implement this method in your adapter
         }
-    }
-
-    fun loadAlbum(context: Context, albumName: String) {
-        //val key = getKeyForAlbum(context, albumName)
-        // Use the key to decrypt and display photos
     }
 
     fun saveAlbumMetadata(context: Context, albumName: String, albumId: String) {
@@ -332,7 +328,12 @@ class MainActivity : AppCompatActivity() {
         val secretKeySpec = SecretKeySpec(key, "AES")
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
         cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec)
-        return cipher.doFinal(byteArray)
+
+        val iv = cipher.iv
+        val encryptedData = cipher.doFinal(byteArray)
+
+
+        return iv + encryptedData
     }
 
     fun getAllEncryptedFileNames(context: Context): Array<String> {
@@ -445,7 +446,6 @@ class MainActivity : AppCompatActivity() {
             // Get the current count of image files in the album directory
             val albumDir = File(getAlbumPath(album.name)) // Get the path of the album
             val imageCount = getImageFileCountFromAlbum(albumDir)
-            Log.e("MainActivity", "Image count: $imageCount")
             // Increment the photo count
             it.photoCount = imageCount
 
@@ -459,7 +459,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getImageFileCountFromAlbum(albumDirectory: File): Int {
-        Log.e("MainActivity", "getImageFileCountFromAlbum called" + albumDirectory.listFiles().size)
         val imageFiles = albumDirectory.listFiles()?.filter {
             // Check if the file is an image by its extension or MIME type or is an encoded file
             it.isFile && isImageFile(it) || it.name.endsWith(".enc", ignoreCase = true)
@@ -480,7 +479,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun getFileNameFromUri(context: Context, uri: Uri): String? {
-        Log.e("MainActivity", "getFileNameFromUri called")
         val contentResolver = context.contentResolver
         val cursor = contentResolver.query(uri, null, null, null, null)
         cursor?.use {

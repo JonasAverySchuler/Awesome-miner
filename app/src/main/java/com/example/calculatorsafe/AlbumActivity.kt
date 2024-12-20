@@ -23,6 +23,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.EncryptionUtils.generateAESKey
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -33,28 +34,48 @@ import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import javax.crypto.spec.IvParameterSpec
 
 class AlbumActivity : AppCompatActivity() {
 
     private val REQUEST_CODE_READ_MEDIA = 1001
     private val permissions = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
     private lateinit var albumId: String
+    private lateinit var directoryPath: String
+    private lateinit var recyclerViewAdapter: EncryptedImageAdapter
+
+    companion object {
+        private val TAG = "AlbumActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_album)
         val albumName = intent.getStringExtra("albumName")
         albumId = intent.getStringExtra("keystoreAlias") ?: ""
+        directoryPath = intent.getStringExtra("directoryPath") ?: ""
+        Log.e(TAG, "Album name: $albumName")
+        Log.e(TAG, "Album ID: $albumId")
+        Log.e(TAG, "Directory path: $directoryPath")
+
         val albumDir = File(getExternalFilesDir(null), albumName)
         val key = getKeyForAlbum(albumId) // Implement key retrieval
-        generateAndStoreKey(albumId)
+        //generateAndStoreKey(albumId)
 
-        val photos = albumDir.listFiles()?.mapNotNull {
-            retrieveDecryptedPhoto(it, key ?: return@mapNotNull null)
-        } ?: emptyList()
+        val encryptedFiles = File(directoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
+
 
 
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
+        albumRecyclerView.layoutManager = GridLayoutManager(this, 3)
+
+        Log.e(TAG, "Number of photos in album: ${encryptedFiles.size}")
+        recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles) { file ->
+            decryptImage(file)
+        }
+
+        albumRecyclerView.adapter = recyclerViewAdapter
+
         val albumFab = findViewById<FloatingActionButton>(R.id.album_fab)
         albumFab.setOnClickListener {
             checkAndRequestPermissions()
@@ -80,6 +101,71 @@ class AlbumActivity : AppCompatActivity() {
         }
 
     }
+
+    fun decryptImage(file: File): Bitmap {
+        //val encryptedData = file.readBytes()
+        val iv = getIV(file)
+        if (iv == null || iv.size != 16) {
+            throw IllegalArgumentException("Invalid IV: ${iv?.size ?: "null"}")
+        }
+        Log.e(TAG, "IV: ${iv.joinToString("") { "%02x".format(it) }}")
+
+        val encryptedData = file.inputStream().use { inputStream ->
+            inputStream.skip(16) // Skip the IV
+            inputStream.readBytes()
+        }
+        Log.e(TAG, "Encrypted data size: ${encryptedData.size}")
+
+        // Example: Decrypt using AES
+        val secretKey = getSecretKey() // Retrieve your secret key
+        if (secretKey == null) {
+            throw IllegalArgumentException("Secret key is null")
+        }
+        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+        val ivSpec = IvParameterSpec(iv)
+        Log.e(TAG, "IV: ${ivSpec.iv.joinToString("") { "%02x".format(it) }}")
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+
+        val decryptedData = cipher.doFinal(encryptedData)
+        return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
+    }
+
+    fun getSecretKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore")
+        keyStore.load(null)
+
+        // Check if the key already exists
+        val alias = "MySecretKeyAlias"
+        return if (keyStore.containsAlias(alias)) {
+            keyStore.getKey(alias, null) as SecretKey
+        } else {
+            // Generate a new AES key
+            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+            keyGenerator.init(
+                KeyGenParameterSpec.Builder(
+                    alias,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                )
+                    .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+                    .build()
+            )
+            keyGenerator.generateKey()
+        }
+    }
+
+    fun getIV(file: File): ByteArray {
+        val iv = ByteArray(16) // AES block size
+        file.inputStream().use { inputStream ->
+            val bytesRead = inputStream.read(iv)
+            if (bytesRead != 16) {
+                throw IllegalArgumentException("Invalid IV length: $bytesRead bytes")
+            }
+        }
+        return iv
+    }
+
 
     fun retrieveDecryptedPhoto(file: File, key: SecretKey): Bitmap? {
         val inputStream = file.inputStream()
@@ -139,15 +225,6 @@ class AlbumActivity : AppCompatActivity() {
             type = "image/* video/*"
         }
         pickMediaLauncher.launch(pickMediaIntent)
-    }
-
-    private fun handleSelectedMedia(contentResolver: ContentResolver, mediaUri: Uri) {
-        val key = generateAESKey()
-        //val bitmap = getBitmapFromUri(contentResolver, mediaUri)
-        //val encryptedImage = encryptImage(bitmap, key)
-        //val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage)
-        //deleteImageFromUri(mediaUri)
-        //addImageToAlbum(encryptedImagePath)
     }
 
     private fun handleImageUri(uri: Uri) {
@@ -229,22 +306,29 @@ class AlbumActivity : AppCompatActivity() {
         }
     }
 
-    class PhotoAdapter(private val photos: List<Bitmap>) : RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder>() {
+    class EncryptedImageAdapter(
+        private val encryptedFiles: List<File>,
+        private val decryptFunction: (File) -> Bitmap
+        ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
         inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             val photoImageView: ImageView = view.findViewById(R.id.photo_image_view)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_photo, parent, false)
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.grid_item_layout, parent, false)
             return PhotoViewHolder(view)
         }
 
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
-            holder.photoImageView.setImageBitmap(photos[position])
+            val encryptedFile = encryptedFiles[position]
+
+            val decryptedBitmap = decryptFunction(encryptedFile)
+            holder.photoImageView.setImageBitmap(decryptedBitmap)
+            //holder.photoImageView.setImageBitmap(encryptedFiles[position])
         }
 
-        override fun getItemCount(): Int = photos.size
+        override fun getItemCount(): Int = encryptedFiles.size
     }
 
 }
