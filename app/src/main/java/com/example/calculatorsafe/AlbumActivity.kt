@@ -25,7 +25,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.EncryptionUtils.generateAESKey
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -58,18 +57,11 @@ class AlbumActivity : AppCompatActivity() {
         Log.e(TAG, "Album ID: $albumId")
         Log.e(TAG, "Directory path: $directoryPath")
 
-        val albumDir = File(getExternalFilesDir(null), albumName)
-        val key = getKeyForAlbum(albumId) // Implement key retrieval
-        //generateAndStoreKey(albumId)
-
         val encryptedFiles = File(directoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
-
-
 
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
         albumRecyclerView.layoutManager = GridLayoutManager(this, 3)
 
-        Log.e(TAG, "Number of photos in album: ${encryptedFiles.size}")
         recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles) { file ->
             decryptImage(file)
         }
@@ -295,10 +287,14 @@ class AlbumActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
             val encryptedFile = encryptedFiles[position]
-
             val decryptedBitmap = decryptFunction(encryptedFile)
             holder.photoImageView.setImageBitmap(decryptedBitmap)
-            //holder.photoImageView.setImageBitmap(encryptedFiles[position])
+            holder.itemView.setOnClickListener {
+                val intent = Intent(holder.itemView.context, MediaViewActivity::class.java)
+                intent.putExtra("imagePaths", ArrayList(listOf(decryptedBitmap)))
+                intent.putExtra("position", position)
+                holder.itemView.context.startActivity(intent)
+            }
         }
 
         override fun getItemCount(): Int = encryptedFiles.size

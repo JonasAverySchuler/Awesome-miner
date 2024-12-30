@@ -1,16 +1,9 @@
 package com.example.calculatorsafe
 
-import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
-import android.widget.Toast
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.MainActivity.AlbumAdapter
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import java.io.File
+import androidx.viewpager2.widget.ViewPager2
 
 class MediaViewActivity : AppCompatActivity() {
 
@@ -18,7 +11,32 @@ class MediaViewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_media_view)
 
-        //setSupportActionBar(toolbar)
+        val viewPager = findViewById<ViewPager2>(R.id.viewPager)
+        val btnDelete = findViewById<Button>(R.id.btnDelete)
+        val btnShare = findViewById<Button>(R.id.btnShare)
+
+        val imagePaths: ArrayList<String> = intent.getStringArrayListExtra("imagePaths") ?: ArrayList()
+        val startPosition = intent.getIntExtra("position", 0)
+        val adapter = ImagePagerAdapter(imagePaths)
+        viewPager.adapter = adapter
+        viewPager.setCurrentItem(startPosition, false)
+
+        btnDelete.setOnClickListener{
+
+        }
+
+        btnShare.setOnClickListener {
+            // Share the current image
+            val currentPosition = viewPager.currentItem
+            //val bitmap = images[currentPosition]
+
+            //val uri = saveBitmapToCache(bitmap)
+            //val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            //    type = "image/*"
+             //   putExtra(Intent.EXTRA_STREAM, uri)
+          //  }
+           // startActivity(Intent.createChooser(shareIntent, "Share image via"))
+        }
 
     }
 }
