@@ -37,6 +37,7 @@
         <activity android:name=".AlbumActivity"/>
         <activity android:name=".PasscodeSetupActivity"/>
         <activity android:name=".CalculatorActivity"/>
+        <activity android:name=".MediaViewActivity"/>
     </application>
 
 </manifest>

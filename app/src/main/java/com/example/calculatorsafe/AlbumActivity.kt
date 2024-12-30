@@ -131,24 +131,6 @@ class AlbumActivity : AppCompatActivity() {
         return iv
     }
 
-
-    fun retrieveDecryptedPhoto(file: File, key: SecretKey): Bitmap? {
-        val inputStream = file.inputStream()
-        val encryptedBytes = inputStream.readBytes()
-        val decryptedBytes = EncryptionUtils.decrypt(encryptedBytes, key)
-        return BitmapFactory.decodeByteArray(decryptedBytes, 0, decryptedBytes.size)
-    }
-
-    fun saveEncryptedPhoto(file: File, photoBitmap: Bitmap, key: SecretKey) {
-        val outputStream = file.outputStream()
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        photoBitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-        val photoBytes = byteArrayOutputStream.toByteArray()
-        val encryptedBytes = EncryptionUtils.encrypt(photoBytes, key)
-        outputStream.write(encryptedBytes)
-        outputStream.close()
-    }
-
     private fun generateAndStoreKey(albumId: String): SecretKey {
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
         val keyGenParameterSpec = KeyGenParameterSpec.Builder(albumId, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
@@ -245,32 +227,6 @@ class AlbumActivity : AppCompatActivity() {
         }
     }
 
-    fun decryptPhoto(encryptedPhoto: ByteArray, secretKey: SecretKey): ByteArray? {
-        return try {
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE, secretKey)
-            val decryptedBytes = cipher.doFinal(encryptedPhoto)
-            decryptedBytes
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    fun loadAndDecryptPhoto(context: Context, fileName: String, secretKey: SecretKey): Bitmap? {
-        return try {
-            val file = File(context.filesDir, fileName)
-            val encryptedPhoto = file.readBytes()
-            val decryptedBytes = decryptPhoto(encryptedPhoto, secretKey)
-            decryptedBytes?.let {
-                BitmapFactory.decodeByteArray(it, 0, it.size)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     class EncryptedImageAdapter(
         private val encryptedFiles: List<File>,
         private val decryptFunction: (File) -> Bitmap
@@ -290,8 +246,9 @@ class AlbumActivity : AppCompatActivity() {
             val decryptedBitmap = decryptFunction(encryptedFile)
             holder.photoImageView.setImageBitmap(decryptedBitmap)
             holder.itemView.setOnClickListener {
+                val imagePaths = encryptedFiles.map { it.absolutePath }
                 val intent = Intent(holder.itemView.context, MediaViewActivity::class.java)
-                intent.putExtra("imagePaths", ArrayList(listOf(decryptedBitmap)))
+                intent.putExtra("imagePaths", ArrayList(imagePaths))
                 intent.putExtra("position", position)
                 holder.itemView.context.startActivity(intent)
             }
