@@ -103,12 +103,15 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     fun decryptImage(file: File): Bitmap {
-        //val encryptedData = file.readBytes()
-        val iv = getIV(file)
-        if (iv == null || iv.size != 16) {
-            throw IllegalArgumentException("Invalid IV: ${iv?.size ?: "null"}")
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+        val iv = ByteArray(16) // 16 bytes for the IV
+        file.inputStream().use { inputStream ->
+            val bytesRead = inputStream.read(iv)
+            if (bytesRead != 16) {
+                throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
+            }
         }
-        Log.e(TAG, "IV: ${iv.joinToString("") { "%02x".format(it) }}")
+        Log.e(TAG, "Decryption IV: ${iv.joinToString("") { "%02x".format(it) }}")
 
         val encryptedData = file.inputStream().use { inputStream ->
             inputStream.skip(16) // Skip the IV
@@ -116,43 +119,13 @@ class AlbumActivity : AppCompatActivity() {
         }
         Log.e(TAG, "Encrypted data size: ${encryptedData.size}")
 
-        // Example: Decrypt using AES
-        val secretKey = getSecretKey() // Retrieve your secret key
-        if (secretKey == null) {
-            throw IllegalArgumentException("Secret key is null")
-        }
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
         val ivSpec = IvParameterSpec(iv)
-        Log.e(TAG, "IV: ${ivSpec.iv.joinToString("") { "%02x".format(it) }}")
 
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
 
-        val decryptedData = cipher.doFinal(encryptedData)
+        val decryptedData = cipher.doFinal(encryptedData) //crash here
         return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
-    }
-
-    fun getSecretKey(): SecretKey {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore")
-        keyStore.load(null)
-
-        // Check if the key already exists
-        val alias = "MySecretKeyAlias"
-        return if (keyStore.containsAlias(alias)) {
-            keyStore.getKey(alias, null) as SecretKey
-        } else {
-            // Generate a new AES key
-            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-            keyGenerator.init(
-                KeyGenParameterSpec.Builder(
-                    alias,
-                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-                )
-                    .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
-                    .build()
-            )
-            keyGenerator.generateKey()
-        }
     }
 
     fun getIV(file: File): ByteArray {

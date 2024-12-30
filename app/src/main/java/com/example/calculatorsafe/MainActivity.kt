@@ -42,6 +42,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.calculatorsafe.AlbumActivity.Companion
 import com.example.calculatorsafe.EncryptionUtils.generateAESKey
 import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
 import com.google.android.material.appbar.MaterialToolbar
@@ -201,7 +202,6 @@ class MainActivity : AppCompatActivity() {
             albumDir.mkdirs()
             // Add new album to the list and update RecyclerView
             val albumId = generateAlbumId() //returning empty string for now
-            generateAndStoreKey(context, albumId)
             saveAlbumMetadata(context, albumName, albumId)
             val newAlbum = Album(albumName, 0, albumId)
             albumAdapter.addAlbum(newAlbum) // Implement this method in your adapter
@@ -216,27 +216,6 @@ class MainActivity : AppCompatActivity() {
     fun getAlbumId(context: Context, albumName: String): String? {
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         return prefs.getString(albumName, null)
-    }
-
-    fun getKeyForAlbum(context: Context, albumName: String): SecretKey? {
-        val albumId = getAlbumId(context, albumName) ?: return null
-        return getKey(context, albumId)
-    }
-
-    fun getKey(context: Context, albumId: String): SecretKey? {
-        return try {
-            // Initialize the KeyStore
-            val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-
-            // Retrieve the key from the KeyStore using the alias
-            val key = keyStore.getKey(albumId, null)
-
-            // Return the key if it's an instance of SecretKey
-            if (key is SecretKey) key else null
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
     }
 
     fun updateAlbumName(context: Context, oldAlbumName: String, newAlbumName: String) {
@@ -320,18 +299,19 @@ class MainActivity : AppCompatActivity() {
         //show dialog telling user permissions are required and to enable them to access features
     }
 
-    private fun encryptImage(bitmap: Bitmap, key: ByteArray): ByteArray {
+    private fun encryptImage(bitmap: Bitmap): ByteArray {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+
         val byteArrayOutputStream = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
 
-        val secretKeySpec = SecretKeySpec(key, "AES")
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
 
         val iv = cipher.iv
         val encryptedData = cipher.doFinal(byteArray)
-
+        Log.e(TAG, "Encryption IV: ${iv.joinToString("") { "%02x".format(it) }} iv size: ${iv.size}")
 
         return iv + encryptedData
     }
@@ -400,38 +380,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-        // Function to decrypt an image file
-    fun decryptImage(context: Context, fileName: String, key: ByteArray): Bitmap? {
-        try {
-            // Read encrypted file from internal storage
-            val fis = context.openFileInput(fileName)
-            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-            val secretKey = SecretKeySpec(key, "AES")
-            val iv = ByteArray(cipher.blockSize)
-            val ivSpec = IvParameterSpec(iv)
-
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
-            val cis = CipherInputStream(fis, cipher)
-
-            // Decrypt and decode image file
-            val decryptedBitmap = BitmapFactory.decodeStream(cis)
-
-            fis.close()
-            return decryptedBitmap
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
-    }
-
     private fun deleteImageFromUri(uri: Uri) {
         contentResolver.delete(uri, null, null)
     }
 
     private fun handleSelectedMedia(mediaUri: Uri) {
-        val key = generateAESKey()
         val bitmap = getBitmapFromUri(contentResolver, mediaUri)
-        val encryptedImage = encryptImage(bitmap, key)
+        val encryptedImage = encryptImage(bitmap)
 
         val originalFileName = getFileNameFromUri(this, mediaUri) ?: "unknown"
         val mimeType = contentResolver.getType(mediaUri) ?: "unknown"

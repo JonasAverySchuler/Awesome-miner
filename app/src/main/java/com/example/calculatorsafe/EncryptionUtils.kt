@@ -10,7 +10,7 @@ import javax.crypto.SecretKey
 
 object EncryptionUtils {
     private const val ALGORITHM = "AES"
-    private const val TRANSFORMATION = "AES/ECB/PKCS5Padding"
+    private const val TRANSFORMATION = "AES/CBC/PKCS7Padding"
 
     // Generate a secret key for AES encryption
     fun generateKey(): SecretKey {
@@ -34,7 +34,7 @@ object EncryptionUtils {
     }
 
     fun generateAESKey(): ByteArray {
-        val keyGen = KeyGenerator.getInstance("AES")
+        val keyGen = KeyGenerator.getInstance(ALGORITHM)
         keyGen.init(128) // 128-bit key size
         return keyGen.generateKey().encoded
     }
