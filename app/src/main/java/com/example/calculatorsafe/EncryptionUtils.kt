@@ -2,41 +2,78 @@ package com.example.calculatorsafe
 
 import android.content.ContentResolver
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
+import com.example.calculatorsafe.FileUtils.getAlbumPath
+import com.example.calculatorsafe.MainActivity.Album
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
-import javax.crypto.SecretKey
+import javax.crypto.spec.IvParameterSpec
 
 object EncryptionUtils {
     private const val ALGORITHM = "AES"
     private const val TRANSFORMATION = "AES/CBC/PKCS7Padding"
 
-    // Generate a secret key for AES encryption
-    fun generateKey(): SecretKey {
-        val keyGen = KeyGenerator.getInstance(ALGORITHM)
-        keyGen.init(256)
-        return keyGen.generateKey()
+    fun encryptImage(bitmap: Bitmap): ByteArray {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+        val byteArray = byteArrayOutputStream.toByteArray()
+
+        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+
+        val iv = cipher.iv
+        val encryptedData = cipher.doFinal(byteArray)
+
+        return iv + encryptedData
     }
 
-    // Encrypt data
-    fun encrypt(data: ByteArray, key: SecretKey): ByteArray {
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, key)
-        return cipher.doFinal(data)
+    fun saveEncryptedImageToStorage(encryptedImage: ByteArray,albumsDir: File, targetAlbum: Album?, originalFileName: String, mimeType: String): String {
+        val albumDir = File(getAlbumPath(albumsDir,targetAlbum?.name ?: "default"))
+        if (!albumDir.exists()) {
+            albumDir.mkdirs() // Create the album directory if it doesn't exist
+        }
+
+        // Generate a unique file name
+        val fileName = "IMG_${System.currentTimeMillis()}.enc"
+        val file = File(albumDir, fileName)
+
+        FileOutputStream(file).use {
+            it.write(encryptedImage)
+        }
+
+        //saveMetadata(targetAlbum?.name ?: "default", originalFileName, fileName, mimeType)
+
+        return file.absolutePath
     }
 
-    // Decrypt data
-    fun decrypt(encryptedData: ByteArray, key: SecretKey): ByteArray {
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, key)
-        return cipher.doFinal(encryptedData)
-    }
+    fun decryptImage(file: File): Bitmap {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+        val iv = ByteArray(16) // 16 bytes for the IV
+        file.inputStream().use { inputStream ->
+            val bytesRead = inputStream.read(iv)
+            if (bytesRead != 16) {
+                throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
+            }
+        }
 
-    fun generateAESKey(): ByteArray {
-        val keyGen = KeyGenerator.getInstance(ALGORITHM)
-        keyGen.init(128) // 128-bit key size
-        return keyGen.generateKey().encoded
+        val encryptedData = file.inputStream().use { inputStream ->
+            inputStream.skip(16) // Skip the IV
+            inputStream.readBytes()
+        }
+
+        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+        val ivSpec = IvParameterSpec(iv)
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+
+        val decryptedData = cipher.doFinal(encryptedData)
+        return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
     }
 
     fun getBitmapFromUri(contentResolver: ContentResolver, uri: Uri): Bitmap {

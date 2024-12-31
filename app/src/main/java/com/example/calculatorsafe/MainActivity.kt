@@ -6,14 +6,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.provider.OpenableColumns
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -31,16 +26,14 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
+import com.example.calculatorsafe.EncryptionUtils.saveEncryptedImageToStorage
+import com.example.calculatorsafe.FileUtils.getAlbumPath
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.w3c.dom.Document
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.net.URLConnection
 import java.util.UUID
-import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -128,27 +121,15 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun getAlbumPath(albumName: String): String {
-        val albumDir = File(albumsDir, albumName)
-
-        // Ensure the album directory exists
-        if (!albumDir.exists()) {
-            albumDir.mkdirs() // Create directory if it doesn't exist
-        }
-
-        return albumDir.absolutePath
-    }
-
     private fun openAlbum(album: Album) {
         val intent = Intent(this, AlbumActivity::class.java)
         intent.putExtra("albumName", album.name)
-        intent.putExtra("directoryPath", getAlbumPath(album.name))
+        intent.putExtra("directoryPath", FileUtils.getAlbumPath(albumsDir, album.name))
         intent.putExtra("keystoreAlias", album.albumID)
         startActivity(intent)
     }
 
     private fun createNewAlbum(context: Context) {
-        // Logic for creating a new album (e.g., show a dialog to enter album name)
         showNewAlbumDialog(context)
     }
 
@@ -205,16 +186,6 @@ class MainActivity : AppCompatActivity() {
         prefs.edit().remove(oldAlbumName).apply()
     }
 
-    fun generateAndStoreKey(context: Context, albumId: String) {
-        val keyGen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        val keyGenSpec = KeyGenParameterSpec.Builder(albumId, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-            .build()
-        keyGen.init(keyGenSpec)
-        keyGen.generateKey()
-    }
-
     fun getAlbums(context: Context): List<Album> {
         val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return emptyList()
         return albumDirs.map { dir ->
@@ -223,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun generateAlbumId(): String {
+    private fun generateAlbumId(): String {
         return UUID.randomUUID().toString()
     }
 
@@ -278,27 +249,6 @@ class MainActivity : AppCompatActivity() {
         //show dialog telling user permissions are required and to enable them to access features
     }
 
-    private fun encryptImage(bitmap: Bitmap): ByteArray {
-        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
-
-        val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-        val byteArray = byteArrayOutputStream.toByteArray()
-
-        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-
-        val iv = cipher.iv
-        val encryptedData = cipher.doFinal(byteArray)
-        Log.e(TAG, "Encryption IV: ${iv.joinToString("") { "%02x".format(it) }} iv size: ${iv.size}")
-
-        return iv + encryptedData
-    }
-
-    fun getAllEncryptedFileNames(context: Context): Array<String> {
-        return context.fileList()
-    }
-
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val mediaUri: Uri? = result.data?.data
@@ -309,31 +259,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveEncryptedImageToStorage(encryptedImage: ByteArray, targetAlbum: Album?, originalFileName: String, mimeType: String): String {
-        Log.e("MainActivity", "SaveEncryptedImageToStorage called")
-
-        val albumDir = File(getAlbumPath(targetAlbum?.name ?: "default"))
-        if (!albumDir.exists()) {
-            albumDir.mkdirs() // Create the album directory if it doesn't exist
-        }
-
-        // Generate a unique file name
-        val fileName = "IMG_${System.currentTimeMillis()}.enc"
-        val file = File(albumDir, fileName)
-
-        FileOutputStream(file).use {
-            it.write(encryptedImage)
-        }
-
-        Log.e("MainActivity", "Saving encrypted image to: ${file.absolutePath}")
-        saveMetadata(targetAlbum?.name ?: "default", originalFileName, fileName, mimeType)
-
-
-        return file.absolutePath
-    }
-
     private fun saveMetadata(albumName: String, originalFileName: String, encryptedFileName: String, mimeType: String) {
-        val metadataFile = File(getAlbumPath(albumName), "album_metadata.xml")
+        val metadataFile = File(getAlbumPath(albumsDir,albumName), "album_metadata.xml")
         val document: Document = if (metadataFile.exists()) {
             // Parse existing metadata
             DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(metadataFile)
@@ -359,18 +286,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun deleteImageFromUri(uri: Uri) {
-        contentResolver.delete(uri, null, null)
-    }
-
     private fun handleSelectedMedia(mediaUri: Uri) {
         val bitmap = getBitmapFromUri(contentResolver, mediaUri)
-        val encryptedImage = encryptImage(bitmap)
+        val encryptedImage = EncryptionUtils.encryptImage(bitmap)
 
-        val originalFileName = getFileNameFromUri(this, mediaUri) ?: "unknown"
+        val originalFileName = FileUtils.getFileNameFromUri(this, mediaUri) ?: "unknown"
         val mimeType = contentResolver.getType(mediaUri) ?: "unknown"
 
-        val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage, targetAlbum, originalFileName, mimeType)
+        val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage,albumsDir, targetAlbum, originalFileName, mimeType)
         updatePhotoCount(targetAlbum)
         //deleteImageFromUri(mediaUri)
     }
@@ -378,7 +301,7 @@ class MainActivity : AppCompatActivity() {
     private fun updatePhotoCount(album: Album?) {
         album?.let {
             // Get the current count of image files in the album directory
-            val albumDir = File(getAlbumPath(album.name)) // Get the path of the album
+            val albumDir = File(getAlbumPath(albumsDir,album.name)) // Get the path of the album
             val imageCount = getImageFileCountFromAlbum(albumDir)
             // Increment the photo count
             it.photoCount = imageCount
@@ -392,38 +315,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun getImageFileCountFromAlbum(albumDirectory: File): Int {
+    private fun getImageFileCountFromAlbum(albumDirectory: File): Int {
         val imageFiles = albumDirectory.listFiles()?.filter {
             // Check if the file is an image by its extension or MIME type or is an encoded file
-            it.isFile && isImageFile(it) || it.name.endsWith(".enc", ignoreCase = true)
+            it.isFile && FileUtils.isImageFile(it) || it.name.endsWith(".enc", ignoreCase = true)
         } ?: emptyList()
 
         return imageFiles.size
     }
-
-    fun isImageFile(file: File): Boolean {
-        // Check if the file extension or MIME type is for an image
-        val mimeType = getMimeType(file)
-        return mimeType.startsWith("image") && !file.name.endsWith(".meta")  // exclude metadata files
-    }
-
-    fun getMimeType(file: File): String {
-        // Logic to get MIME type (could be based on file extension or using a MIME detection library)
-        return URLConnection.guessContentTypeFromName(file.name) ?: "unknown"
-    }
-
-    fun getFileNameFromUri(context: Context, uri: Uri): String? {
-        val contentResolver = context.contentResolver
-        val cursor = contentResolver.query(uri, null, null, null, null)
-        cursor?.use {
-            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (nameIndex != -1 && it.moveToFirst()) {
-                return it.getString(nameIndex) // This is the original file name
-            }
-        }
-        return null // Return null if the name cannot be found
-    }
-
 
     class AlbumAdapter(
         private val albums: MutableList<Album>,

@@ -12,8 +12,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -29,11 +27,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.security.KeyStore
 import javax.crypto.Cipher
-import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
-import javax.crypto.spec.IvParameterSpec
 
 class AlbumActivity : AppCompatActivity() {
 
@@ -63,7 +58,7 @@ class AlbumActivity : AppCompatActivity() {
         albumRecyclerView.layoutManager = GridLayoutManager(this, 3)
 
         recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles) { file ->
-            decryptImage(file)
+            EncryptionUtils.decryptImage(file)
         }
 
         albumRecyclerView.adapter = recyclerViewAdapter
@@ -94,67 +89,6 @@ class AlbumActivity : AppCompatActivity() {
 
     }
 
-    fun decryptImage(file: File): Bitmap {
-        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
-        val iv = ByteArray(16) // 16 bytes for the IV
-        file.inputStream().use { inputStream ->
-            val bytesRead = inputStream.read(iv)
-            if (bytesRead != 16) {
-                throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
-            }
-        }
-        Log.e(TAG, "Decryption IV: ${iv.joinToString("") { "%02x".format(it) }}")
-
-        val encryptedData = file.inputStream().use { inputStream ->
-            inputStream.skip(16) // Skip the IV
-            inputStream.readBytes()
-        }
-        Log.e(TAG, "Encrypted data size: ${encryptedData.size}")
-
-        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        val ivSpec = IvParameterSpec(iv)
-
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
-
-        val decryptedData = cipher.doFinal(encryptedData) //crash here
-        return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
-    }
-
-    fun getIV(file: File): ByteArray {
-        val iv = ByteArray(16) // AES block size
-        file.inputStream().use { inputStream ->
-            val bytesRead = inputStream.read(iv)
-            if (bytesRead != 16) {
-                throw IllegalArgumentException("Invalid IV length: $bytesRead bytes")
-            }
-        }
-        return iv
-    }
-
-    private fun generateAndStoreKey(albumId: String): SecretKey {
-        val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        val keyGenParameterSpec = KeyGenParameterSpec.Builder(albumId, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-            .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-            .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-            .build()
-
-        keyGenerator.init(keyGenParameterSpec)
-        return keyGenerator.generateKey()
-    }
-
-
-    private fun getKeyForAlbum(albumId: String): SecretKey {
-        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        var key = keyStore.getKey(albumId, null) as? SecretKey
-
-        if (key == null) {
-            // Key does not exist, generate a new one
-            key = generateAndStoreKey(albumId)
-        }
-
-        return key ?: throw IllegalStateException("Key generation failed")
-    }
-
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val mediaUri: Uri? = result.data?.data
@@ -175,7 +109,7 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun handleImageUri(uri: Uri) {
-        val secretKey = getKeyForAlbum(albumId) // Retrieve your encryption key
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
         val byteArray = getByteArrayFromUri(contentResolver, uri)
         if (byteArray != null) {
             val encryptedPhoto = encryptPhoto(byteArray, secretKey)
