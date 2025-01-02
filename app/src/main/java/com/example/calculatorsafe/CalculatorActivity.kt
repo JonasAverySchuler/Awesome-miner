@@ -2,7 +2,6 @@ package com.example.calculatorsafe
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -17,6 +16,8 @@ class CalculatorActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.calculator_layout)
         displayTextView = findViewById(R.id.display)
+
+        //TODO: add logic for passcode, finalize UI, handle intent to enter app here and into main activity on successful passcode
 
         val buttons = listOf(
             R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,

@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
         albums = getAlbums(this).toMutableList()
 
+        //TODO: add lambda to handle album option click, show a dialog to rename or delete album
         albumAdapter = AlbumAdapter(albums,
             onAlbumClick = { album ->
                 openAlbum(album)
@@ -126,6 +127,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAlbumSelector(context: Context) {
+        //TODO: improve Dialog
         val albums = getAlbums(context).toMutableList() // Replace with your method to fetch album names
         val albumNames = albums.map { it.name }.toTypedArray()
 
@@ -144,9 +146,11 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("albumName", album.name)
         intent.putExtra("albumDirectoryPath", getAlbumPath(albumsDir, album.name))
         startActivity(intent)
+        //TODO: refresh in case media was added to album
     }
 
     private fun createNewAlbum(context: Context) {
+        //TODO: error check and improve Dialogs
         showNewAlbumDialog(context)
     }
 
