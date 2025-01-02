@@ -36,6 +36,7 @@ android {
         jvmTarget = '1.8'
     }
     buildFeatures {
+        buildConfig = true // Enable BuildConfig for custom fields
         viewBinding true
     }
     viewBinding {

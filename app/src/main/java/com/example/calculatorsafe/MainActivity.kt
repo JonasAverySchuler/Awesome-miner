@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -28,6 +29,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
 import com.example.calculatorsafe.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.FileUtils.getAlbumPath
+import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.w3c.dom.Document
@@ -66,15 +68,25 @@ class MainActivity : AppCompatActivity() {
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
         albums = getAlbums(this).toMutableList()
-        albumAdapter = AlbumAdapter(albums) { album ->
-            openAlbum(album)
-        }
+
+        albumAdapter = AlbumAdapter(albums,
+            onAlbumClick = { album ->
+                openAlbum(album)
+            },
+            onThumbnailReady = { imageView, bitmap ->
+                if (bitmap != null) {
+                    imageView.setImageBitmap(bitmap)
+                } else {
+                    //imageView.setImageResource(R.drawable.baseline_image_24)
+                    //TODO: add placeholder image
+                }
+            }
+        )
+
         mainRecyclerView.adapter = albumAdapter
 
-        fab.setOnClickListener {  // Register ActivityResult handler
-            // Register your observer here
+        fab.setOnClickListener {
             openAlbumSelector(this)
-            //checkAndRequestPermissions()
         }
 
         if (!PreferenceHelper.isPasscodeSet(this)) {
@@ -114,11 +126,10 @@ class MainActivity : AppCompatActivity() {
         val albumNames = albums.map { it.name }.toTypedArray()
 
         AlertDialog.Builder(this)
-            .setTitle("Choose an Album")
+            .setTitle("Choose an Album to store media")
             .setItems(albumNames) { _, which ->
                 targetAlbum = albums[which]
                 checkAndRequestPermissions()
-                //openMediaPicker(selectedAlbum) // Pass the selected album
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -165,7 +176,7 @@ class MainActivity : AppCompatActivity() {
             // Add new album to the list and update RecyclerView
             val albumId = generateAlbumId()
             saveAlbumMetadata(context, albumName, albumId)
-            val newAlbum = Album(albumName, 0, albumId)
+            val newAlbum = Album(albumName, 0, albumId, albumDir.absolutePath)
             albumAdapter.addAlbum(newAlbum)
         }
     }
@@ -192,7 +203,7 @@ class MainActivity : AppCompatActivity() {
         val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return emptyList()
         return albumDirs.map { dir ->
             val photoCount = (getImageFileCountFromAlbum(dir))
-            Album(dir.name, photoCount, getAlbumId(context, dir.name) ?: "")
+            Album(dir.name, photoCount, getAlbumId(context, dir.name) ?: "", dir.absolutePath)
         }
     }
 
@@ -328,7 +339,8 @@ class MainActivity : AppCompatActivity() {
 
     class AlbumAdapter(
         private val albums: MutableList<Album>,
-        private val onAlbumClick: (Album) -> Unit
+        private val onAlbumClick: (Album) -> Unit,
+        private val onThumbnailReady: (ImageView, Bitmap?) -> Unit
     ) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
 
         inner class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -353,7 +365,8 @@ class MainActivity : AppCompatActivity() {
             // Set album thumbnail (if applicable), name, and photo count
             holder.albumName.text = album.name
             holder.photoCount.text = "${album.photoCount} photos"
-            // Set a placeholder or real image if available
+
+            loadThumbnailAsync(album, holder.albumThumbnail, onThumbnailReady)
         }
 
         override fun getItemCount(): Int = albums.size
@@ -364,5 +377,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    data class Album(val name: String, var photoCount: Int, val albumID: String)
+    data class Album(val name: String, var photoCount: Int, val albumID: String, val pathString: String = "")
 }
