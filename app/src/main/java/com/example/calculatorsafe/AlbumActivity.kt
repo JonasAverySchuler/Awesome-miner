@@ -4,7 +4,6 @@ import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
 import android.content.ContentResolver
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -14,11 +13,14 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
+import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
@@ -26,15 +28,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileOutputStream
-import javax.crypto.Cipher
-import javax.crypto.SecretKey
 
 class AlbumActivity : AppCompatActivity() {
 
     private val REQUEST_CODE_READ_MEDIA = 1001
-    private val permissions = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-    private lateinit var albumId: String
     private lateinit var directoryPath: String
     private lateinit var recyclerViewAdapter: EncryptedImageAdapter
 
@@ -46,20 +43,31 @@ class AlbumActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_album)
         val albumName = intent.getStringExtra("albumName")
-        albumId = intent.getStringExtra("keystoreAlias") ?: ""
         directoryPath = intent.getStringExtra("directoryPath") ?: ""
         Log.e(TAG, "Album name: $albumName")
-        Log.e(TAG, "Album ID: $albumId")
         Log.e(TAG, "Directory path: $directoryPath")
 
         val encryptedFiles = File(directoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
         FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
         Log.e(TAG, "File paths: ${FilePathManager.getFilePaths()}")
 
+        val toolbar = findViewById<Toolbar>(R.id.album_toolbar)
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
-        albumRecyclerView.layoutManager = GridLayoutManager(this, 3)
+        val gridLayoutManager = GridLayoutManager(this, 3)
 
-        recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles) { file ->
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = albumName
+
+        // Calculate and set item width dynamically
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val spacing = 3 // Adjust for margins and padding
+        val itemWidth = (screenWidth - (spacing * 4)) / 3
+
+        albumRecyclerView.layoutManager = gridLayoutManager
+
+        recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles, itemWidth) { file ->
             EncryptionUtils.decryptImage(file)
         }
 
@@ -70,6 +78,17 @@ class AlbumActivity : AppCompatActivity() {
             checkAndRequestPermissions()
             }
         }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish() // Closes the activity and goes back to the previous one
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
 
     private fun checkAndRequestPermissions() {
         val permissionsNeeded = mutableListOf<String>()
@@ -114,14 +133,14 @@ class AlbumActivity : AppCompatActivity() {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
         val byteArray = getByteArrayFromUri(contentResolver, uri)
         if (byteArray != null) {
-            val encryptedPhoto = encryptPhoto(byteArray, secretKey)
-            if (encryptedPhoto != null) {
-                saveEncryptedPhoto(this, encryptedPhoto, "photo_${System.currentTimeMillis()}.png")
+            //val encryptedPhoto = encryptPhoto(byteArray, secretKey)
+            //if (encryptedPhoto != null) {
+                //saveEncryptedPhoto(this, encryptedPhoto, "photo_${System.currentTimeMillis()}.png")
                 //deleteOriginalPhoto(contentResolver, uri)
 
                 // Refresh your RecyclerView
                 //loadPhotos()
-            }
+            //}
         }
     }
 
@@ -140,36 +159,25 @@ class AlbumActivity : AppCompatActivity() {
         }
     }
 
-    fun encryptPhoto(byteArray: ByteArray, secretKey: SecretKey): ByteArray? {
-        return try {
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-            val encryptedBytes = cipher.doFinal(byteArray)
-            encryptedBytes
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-    fun saveEncryptedPhoto(context: Context, encryptedPhoto: ByteArray, fileName: String) {
-        try {
-            val file = File(context.filesDir, fileName)
-            FileOutputStream(file).use { outputStream ->
-                outputStream.write(encryptedPhoto)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
     class EncryptedImageAdapter(
         private val encryptedFiles: List<File>,
+        private val itemWidth: Int,
         private val decryptFunction: (File) -> Bitmap
         ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
         inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val cardView: CardView = view.findViewById(R.id.card_view)
             val photoImageView: ImageView = view.findViewById(R.id.photo_image_view)
+
+            fun setItemWidth(width: Int) {
+                // Set the width for the CardView
+                val layoutParams = cardView.layoutParams
+                layoutParams.width = width
+                cardView.layoutParams = layoutParams
+
+                layoutParams.height = width // Set the same height as the width to maintain a square shape
+                cardView.layoutParams = layoutParams
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
@@ -178,6 +186,7 @@ class AlbumActivity : AppCompatActivity() {
         }
 
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
+            holder.setItemWidth(itemWidth)
             val encryptedFile = encryptedFiles[position]
             val decryptedBitmap = decryptFunction(encryptedFile)
             holder.photoImageView.setImageBitmap(decryptedBitmap)

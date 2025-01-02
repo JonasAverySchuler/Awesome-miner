@@ -65,19 +65,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
-        albums = getAlbums(this).toMutableList() // Fetch albums and photo count
+        albums = getAlbums(this).toMutableList()
         albumAdapter = AlbumAdapter(albums) { album ->
             openAlbum(album)
         }
         mainRecyclerView.adapter = albumAdapter
-
 
         fab.setOnClickListener {  // Register ActivityResult handler
             // Register your observer here
             openAlbumSelector(this)
             //checkAndRequestPermissions()
         }
-
 
         if (!PreferenceHelper.isPasscodeSet(this)) {
             // Passcode not set, navigate to passcode setup activity
@@ -102,6 +100,12 @@ class MainActivity : AppCompatActivity() {
                 createNewAlbum(this)
                 true
             }
+            R.id.action_settings -> {
+                // Or navigate to a new activity
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -124,8 +128,7 @@ class MainActivity : AppCompatActivity() {
     private fun openAlbum(album: Album) {
         val intent = Intent(this, AlbumActivity::class.java)
         intent.putExtra("albumName", album.name)
-        intent.putExtra("directoryPath", FileUtils.getAlbumPath(albumsDir, album.name))
-        intent.putExtra("keystoreAlias", album.albumID)
+        intent.putExtra("directoryPath", getAlbumPath(albumsDir, album.name))
         startActivity(intent)
     }
 
@@ -161,10 +164,10 @@ class MainActivity : AppCompatActivity() {
         if (!albumDir.exists()) {
             albumDir.mkdirs()
             // Add new album to the list and update RecyclerView
-            val albumId = generateAlbumId() //returning empty string for now
+            val albumId = generateAlbumId()
             saveAlbumMetadata(context, albumName, albumId)
             val newAlbum = Album(albumName, 0, albumId)
-            albumAdapter.addAlbum(newAlbum) // Implement this method in your adapter
+            albumAdapter.addAlbum(newAlbum)
         }
     }
 
