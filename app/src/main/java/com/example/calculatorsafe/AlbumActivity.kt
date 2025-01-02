@@ -44,7 +44,6 @@ class AlbumActivity : AppCompatActivity() {
         setContentView(R.layout.activity_album)
         val albumName = intent.getStringExtra("albumName")
         directoryPath = intent.getStringExtra("directoryPath") ?: ""
-        Log.e(TAG, "Album name: $albumName")
         Log.e(TAG, "Directory path: $directoryPath")
 
         val encryptedFiles = File(directoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()

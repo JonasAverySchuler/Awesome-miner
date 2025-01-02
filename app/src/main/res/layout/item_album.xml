@@ -1,10 +1,10 @@
 <!-- res/layout/item_album.xml -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:padding="8dp"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="4dp"
     android:background="@color/white">
 
     <ImageView
@@ -12,6 +12,11 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginEnd="8dp"
+        android:scaleType="centerCrop"
+        android:adjustViewBounds="true"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/album_name"
         />
 
     <TextView
@@ -21,12 +26,35 @@
         android:textSize="18sp"
         android:textColor="@android:color/black"
         android:padding="4sp"
-        tools:text="Album Name" />
+        tools:text="Album Name"
+
+        app:layout_constraintStart_toEndOf="@id/album_thumbnail"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
 
     <TextView
         android:id="@+id/photo_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="14sp"
-        android:textColor="@android:color/darker_gray" />
-</LinearLayout>
+        android:textColor="@android:color/darker_gray"
+        tools:text="Photo Count"
+
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/album_name"
+        />
+
+    <ImageButton
+        android:id="@+id/album_options_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+
+        android:src="@drawable/ic_option"
+        />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
