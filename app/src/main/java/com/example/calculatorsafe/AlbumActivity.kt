@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
@@ -79,11 +80,24 @@ class AlbumActivity : AppCompatActivity() {
             }
         }
 
+    // Inflate the menu (from menu_album.xml)
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_album, menu)  // R.menu.menu_album is your XML menu file
+        return true
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         //TODO: add options for deleting,restoring,sorting
         return when (item.itemId) {
             android.R.id.home -> {
                 finish() // Closes the activity and goes back to the previous one
+                true
+            }
+            R.id.action_delete -> {
+                // Handle delete action
+                true
+            }
+            R.id.action_restore -> {
                 true
             }
             else -> super.onOptionsItemSelected(item)
