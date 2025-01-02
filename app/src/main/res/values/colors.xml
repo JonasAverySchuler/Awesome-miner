@@ -4,4 +4,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_gray">#FFC0C0C0</color>
     <color name="darker_gray">#202020</color>
+    <color name="blue_click">#1A33B6</color>
+    <color name="main_navy">#000080</color>
+    <color name="darker_navy">#020265</color>
 </resources>

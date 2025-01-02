@@ -10,4 +10,13 @@
         <!-- Set toolbar text color to white -->
         <item name="android:textColorPrimary">#FFFFFF</item>
     </style>
+
+    <style name="defaultToolbarTheme" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="popupMenuBackground">@drawable/item_background_menu</item>
+    </style>
+
+    <style name="OverflowMenuStyle" parent="Widget.MaterialComponents.PopupMenu.Overflow">
+        <item name="android:popupBackground">@null</item>
+    </style>
+
 </resources>
