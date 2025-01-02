@@ -101,7 +101,6 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_settings -> {
-                // Or navigate to a new activity
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivity(intent)
                 true
