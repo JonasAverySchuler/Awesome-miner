@@ -3,11 +3,8 @@ package com.example.calculatorsafe
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
-import android.content.ContentResolver
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
@@ -21,19 +18,22 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
+import com.example.calculatorsafe.EncryptionUtils.saveEncryptedImageToStorage
+import com.example.calculatorsafe.FileUtils.getImageFileCountFromAlbum
+import com.example.calculatorsafe.PreferenceHelper.getAlbumId
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import java.io.ByteArrayOutputStream
 import java.io.File
 
 class AlbumActivity : AppCompatActivity() {
 
     private val REQUEST_CODE_READ_MEDIA = 1001
-    private lateinit var directoryPath: String
+    private lateinit var albumDirectoryPath: String
+    private lateinit var album: MainActivity.Album
     private lateinit var recyclerViewAdapter: EncryptedImageAdapter
+    private lateinit var permissionHelper: PermissionHelper
 
     companion object {
         private val TAG = "AlbumActivity"
@@ -42,13 +42,14 @@ class AlbumActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_album)
-        val albumName = intent.getStringExtra("albumName")
-        directoryPath = intent.getStringExtra("directoryPath") ?: ""
-        Log.e(TAG, "Directory path: $directoryPath")
+        val albumName = intent.getStringExtra("albumName") ?: ""
+        albumDirectoryPath = intent.getStringExtra("albumDirectoryPath") ?: ""
+        Log.e(TAG, "directoryPath: $albumDirectoryPath")
+        album = MainActivity.Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
 
-        val encryptedFiles = File(directoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
+        val encryptedFiles = File(albumDirectoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
         FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
-        Log.e(TAG, "File paths: ${FilePathManager.getFilePaths()}")
+        permissionHelper = PermissionHelper(this)
 
         val toolbar = findViewById<Toolbar>(R.id.album_toolbar)
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
@@ -79,6 +80,7 @@ class AlbumActivity : AppCompatActivity() {
         }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        //TODO: add options for deleting,restoring,sorting
         return when (item.itemId) {
             android.R.id.home -> {
                 finish() // Closes the activity and goes back to the previous one
@@ -90,18 +92,19 @@ class AlbumActivity : AppCompatActivity() {
 
 
     private fun checkAndRequestPermissions() {
+        //TODO: add support for selective permissions, test API levels and permissions
         val permissionsNeeded = mutableListOf<String>()
         //add if below a certain API level to check for different permission names
-        if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+        if (!permissionHelper.hasPermission(READ_MEDIA_IMAGES)) {
             permissionsNeeded.add(READ_MEDIA_IMAGES)
         }
 
-        if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+        if (!permissionHelper.hasPermission(READ_MEDIA_VIDEO)) {
             permissionsNeeded.add(READ_MEDIA_VIDEO)
         }
 
         if (permissionsNeeded.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
+            permissionHelper.requestPermissions(permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
         } else {
             // Permissions are already granted
             accessUserImages()
@@ -111,11 +114,11 @@ class AlbumActivity : AppCompatActivity() {
 
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
+            Log.e(TAG, "Result OK")
             val mediaUri: Uri? = result.data?.data
             mediaUri?.let {
                 // Handle the selected image or video URI
-                //handleSelectedMedia(contentResolver,it)
-                handleImageUri(it)
+                handleSelectedMedia(it)
             }
         }
     }
@@ -128,34 +131,18 @@ class AlbumActivity : AppCompatActivity() {
         pickMediaLauncher.launch(pickMediaIntent)
     }
 
-    private fun handleImageUri(uri: Uri) {
-        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
-        val byteArray = getByteArrayFromUri(contentResolver, uri)
-        if (byteArray != null) {
-            //val encryptedPhoto = encryptPhoto(byteArray, secretKey)
-            //if (encryptedPhoto != null) {
-                //saveEncryptedPhoto(this, encryptedPhoto, "photo_${System.currentTimeMillis()}.png")
-                //deleteOriginalPhoto(contentResolver, uri)
+    private fun handleSelectedMedia(mediaUri: Uri) {
+        Log.e(TAG, "handleSelectedMedia")
+        val bitmap = getBitmapFromUri(contentResolver, mediaUri)
+        val encryptedImage = EncryptionUtils.encryptImage(bitmap)
 
-                // Refresh your RecyclerView
-                //loadPhotos()
-            //}
-        }
-    }
+        val originalFileName = FileUtils.getFileNameFromUri(this, mediaUri) ?: "unknown"
+        val mimeType = contentResolver.getType(mediaUri) ?: "unknown"
 
-    fun getByteArrayFromUri(contentResolver: ContentResolver, uri: Uri): ByteArray? {
-        return try {
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                val bitmap = BitmapFactory.decodeStream(inputStream)
-                ByteArrayOutputStream().use { byteArrayOutputStream ->
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
-                    byteArrayOutputStream.toByteArray()
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+        //albumDirectoryPath will always have its parent directory and so it is safe to assert it, we need the parentDirectory Albums
+        saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
+        //TODO: update recyclerview to display updated files
+        //deleteImageFromUri(mediaUri)
     }
 
     class EncryptedImageAdapter(

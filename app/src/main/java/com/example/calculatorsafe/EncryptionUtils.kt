@@ -1,11 +1,12 @@
 package com.example.calculatorsafe
 
 import android.content.ContentResolver
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
-import com.example.calculatorsafe.FileUtils.getAlbumPath
+import android.util.Log
 import com.example.calculatorsafe.MainActivity.Album
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -16,6 +17,10 @@ import javax.crypto.spec.IvParameterSpec
 object EncryptionUtils {
     private const val ALGORITHM = "AES"
     private const val TRANSFORMATION = "AES/CBC/PKCS7Padding"
+
+    fun getAlbumsDir(context: Context): File {
+        return File(context.filesDir, "Albums")
+    }
 
     fun encryptImage(bitmap: Bitmap): ByteArray {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
@@ -33,8 +38,17 @@ object EncryptionUtils {
         return iv + encryptedData
     }
 
-    fun saveEncryptedImageToStorage(encryptedImage: ByteArray,albumsDir: File, targetAlbum: Album?, originalFileName: String, mimeType: String): String {
-        val albumDir = File(getAlbumPath(albumsDir,targetAlbum?.name ?: "default"))
+    fun saveEncryptedImageToStorage(
+        encryptedImage: ByteArray,
+        albumsDir: File,
+        targetAlbum: Album?,
+        originalFileName: String,
+        mimeType: String
+    ): String {
+        Log.e("EncryptionUtils", "saveEncryptedImageToStorage")
+        Log.e("EncryptionUtils", "albumsDir: $albumsDir")
+        val albumDir = File(albumsDir, targetAlbum?.name ?: "default")
+        Log.e("EncryptionUtils", "albumDir: $albumDir")
         if (!albumDir.exists()) {
             albumDir.mkdirs() // Create the album directory if it doesn't exist
         }

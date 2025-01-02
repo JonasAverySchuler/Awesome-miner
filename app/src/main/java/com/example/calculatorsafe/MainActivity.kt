@@ -29,6 +29,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
 import com.example.calculatorsafe.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.FileUtils.getAlbumPath
+import com.example.calculatorsafe.FileUtils.getImageFileCountFromAlbum
+import com.example.calculatorsafe.PreferenceHelper.getAlbumId
+import com.example.calculatorsafe.PreferenceHelper.saveAlbumMetadata
 import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -139,7 +142,7 @@ class MainActivity : AppCompatActivity() {
     private fun openAlbum(album: Album) {
         val intent = Intent(this, AlbumActivity::class.java)
         intent.putExtra("albumName", album.name)
-        intent.putExtra("directoryPath", getAlbumPath(albumsDir, album.name))
+        intent.putExtra("albumDirectoryPath", getAlbumPath(albumsDir, album.name))
         startActivity(intent)
     }
 
@@ -180,16 +183,6 @@ class MainActivity : AppCompatActivity() {
             val newAlbum = Album(albumName, 0, albumId, albumDir.absolutePath)
             albumAdapter.addAlbum(newAlbum)
         }
-    }
-
-    fun saveAlbumMetadata(context: Context, albumName: String, albumId: String) {
-        val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
-        prefs.edit().putString(albumName, albumId).apply()
-    }
-
-    fun getAlbumId(context: Context, albumName: String): String? {
-        val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
-        return prefs.getString(albumName, null)
     }
 
     fun updateAlbumName(context: Context, oldAlbumName: String, newAlbumName: String) {
@@ -329,15 +322,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getImageFileCountFromAlbum(albumDirectory: File): Int {
-        val imageFiles = albumDirectory.listFiles()?.filter {
-            // Check if the file is an image by its extension or MIME type or is an encoded file
-            it.isFile && FileUtils.isImageFile(it) || it.name.endsWith(".enc", ignoreCase = true)
-        } ?: emptyList()
-
-        return imageFiles.size
-    }
-
     class AlbumAdapter(
         private val albums: MutableList<Album>,
         private val onAlbumClick: (Album) -> Unit,
@@ -357,7 +341,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumViewHolder {
-                val view = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
+            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_album, parent, false)
             return AlbumViewHolder(view)
         }
 
