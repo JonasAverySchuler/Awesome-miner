@@ -3,6 +3,8 @@ package com.example.calculatorsafe
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.calculatorsafe.EncryptionUtils.decryptImage
+import java.io.File
 
 class ImagePagerAdapter(
     private val imagePaths: List<String>
@@ -13,8 +15,9 @@ class ImagePagerAdapter(
 
         fun bind(imagePath: String) {
             // Decrypt and display the image
-            //val bitmap = decryptImage(imagePath)
-            //imageView.setImageBitmap(bitmap)
+            val encryptedFile = File(imagePath)
+            val bitmap = decryptImage(encryptedFile)
+            imageView.setImageBitmap(bitmap)
         }
     }
 

@@ -53,6 +53,8 @@ class AlbumActivity : AppCompatActivity() {
         Log.e(TAG, "Directory path: $directoryPath")
 
         val encryptedFiles = File(directoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
+        FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+        Log.e(TAG, "File paths: ${FilePathManager.getFilePaths()}")
 
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
         albumRecyclerView.layoutManager = GridLayoutManager(this, 3)
@@ -180,9 +182,7 @@ class AlbumActivity : AppCompatActivity() {
             val decryptedBitmap = decryptFunction(encryptedFile)
             holder.photoImageView.setImageBitmap(decryptedBitmap)
             holder.itemView.setOnClickListener {
-                val imagePaths = encryptedFiles.map { it.absolutePath }
                 val intent = Intent(holder.itemView.context, MediaViewActivity::class.java)
-                intent.putExtra("imagePaths", ArrayList(imagePaths))
                 intent.putExtra("position", position)
                 holder.itemView.context.startActivity(intent)
             }

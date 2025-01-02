@@ -293,7 +293,7 @@ class MainActivity : AppCompatActivity() {
         val originalFileName = FileUtils.getFileNameFromUri(this, mediaUri) ?: "unknown"
         val mimeType = contentResolver.getType(mediaUri) ?: "unknown"
 
-        val encryptedImagePath = saveEncryptedImageToStorage(encryptedImage,albumsDir, targetAlbum, originalFileName, mimeType)
+        saveEncryptedImageToStorage(encryptedImage,albumsDir, targetAlbum, originalFileName, mimeType)
         updatePhotoCount(targetAlbum)
         //deleteImageFromUri(mediaUri)
     }

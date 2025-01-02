@@ -1,6 +1,7 @@
 package com.example.calculatorsafe
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
@@ -15,7 +16,8 @@ class MediaViewActivity : AppCompatActivity() {
         val btnDelete = findViewById<Button>(R.id.btnDelete)
         val btnShare = findViewById<Button>(R.id.btnShare)
 
-        val imagePaths: ArrayList<String> = intent.getStringArrayListExtra("imagePaths") ?: ArrayList()
+        val imagePaths = FilePathManager.getFilePaths()
+        Log.e("MediaViewActivity", "Image paths: $imagePaths")
         val startPosition = intent.getIntExtra("position", 0)
         val adapter = ImagePagerAdapter(imagePaths)
         viewPager.adapter = adapter
