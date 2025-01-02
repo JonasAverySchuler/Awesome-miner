@@ -156,8 +156,7 @@ class AlbumActivity : AppCompatActivity() {
         //albumDirectoryPath will always have its parent directory and so it is safe to assert it, we need the parentDirectory Albums
         val newFilePath = saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
         recyclerViewAdapter.addFile(File(newFilePath))
-        //TODO:MediaViewActivity isnt being updated to have new file
-        //deleteImageFromUri(mediaUri)
+        //deleteImageFromUri(mediaUri) //TODO: Delete file when i feel confident we have a working solution
     }
 
     class EncryptedImageAdapter(
@@ -166,9 +165,19 @@ class AlbumActivity : AppCompatActivity() {
         private val decryptFunction: (File) -> Bitmap
         ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
+            private val selectedItems = mutableSetOf<Int>()
+
         inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val cardView: CardView = view.findViewById(R.id.card_view)
-            val photoImageView: ImageView = view.findViewById(R.id.photo_image_view)
+            private val cardView: CardView = view.findViewById(R.id.card_view)
+            private val photoImageView: ImageView = view.findViewById(R.id.photo_image_view)
+            private val overlay: View = itemView.findViewById(R.id.overlay) // A semi-transparent View
+
+            fun bind(file: File, isSelected: Boolean) {
+                val decryptedBitmap = decryptFunction(file)
+                photoImageView.setImageBitmap(decryptedBitmap)
+                // Show or hide the selection overlay
+                overlay.visibility = if (isSelected) View.VISIBLE else View.GONE
+            }
 
             fun setItemWidth(width: Int) {
                 // Set the width for the CardView
@@ -189,13 +198,33 @@ class AlbumActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
             holder.setItemWidth(itemWidth)
             val encryptedFile = encryptedFiles[position]
-            val decryptedBitmap = decryptFunction(encryptedFile)
-            holder.photoImageView.setImageBitmap(decryptedBitmap)
+            holder.bind(encryptedFile, selectedItems.contains(position))
+            //val decryptedBitmap = decryptFunction(encryptedFile)
+            //holder.photoImageView.setImageBitmap(decryptedBitmap)
             holder.itemView.setOnClickListener {
                 val intent = Intent(holder.itemView.context, MediaViewActivity::class.java)
                 intent.putExtra("position", position)
                 holder.itemView.context.startActivity(intent)
             }
+            holder.itemView.setOnLongClickListener {
+                toggleSelection(position)
+                //listener(selecteditem.size)
+                notifyItemChanged(position)
+                true
+            }
+        }
+
+        fun toggleSelection(position: Int) {
+            if (selectedItems.contains(position)) {
+                selectedItems.remove(position)
+            } else {
+                selectedItems.add(position)
+            }
+            notifyItemChanged(position)
+        }
+
+        fun getSelectedItems(): List<File> {
+            return selectedItems.map { encryptedFiles[it] }
         }
 
         fun addFile(file: File) {
