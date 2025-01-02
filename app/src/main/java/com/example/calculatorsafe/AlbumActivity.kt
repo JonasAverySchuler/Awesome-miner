@@ -67,7 +67,7 @@ class AlbumActivity : AppCompatActivity() {
 
         albumRecyclerView.layoutManager = gridLayoutManager
 
-        recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles, itemWidth) { file ->
+        recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles.toMutableList(), itemWidth) { file ->
             EncryptionUtils.decryptImage(file)
         }
 
@@ -140,13 +140,14 @@ class AlbumActivity : AppCompatActivity() {
         val mimeType = contentResolver.getType(mediaUri) ?: "unknown"
 
         //albumDirectoryPath will always have its parent directory and so it is safe to assert it, we need the parentDirectory Albums
-        saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
-        //TODO: update recyclerview to display updated files
+        val newFilePath = saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
+        recyclerViewAdapter.addFile(File(newFilePath))
+        //TODO:MediaViewActivity isnt being updated to have new file
         //deleteImageFromUri(mediaUri)
     }
 
     class EncryptedImageAdapter(
-        private val encryptedFiles: List<File>,
+        private val encryptedFiles: MutableList<File>,
         private val itemWidth: Int,
         private val decryptFunction: (File) -> Bitmap
         ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
@@ -181,6 +182,11 @@ class AlbumActivity : AppCompatActivity() {
                 intent.putExtra("position", position)
                 holder.itemView.context.startActivity(intent)
             }
+        }
+
+        fun addFile(file: File) {
+            encryptedFiles.add(file)
+            notifyItemInserted(encryptedFiles.size - 1)
         }
 
         override fun getItemCount(): Int = encryptedFiles.size

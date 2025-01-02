@@ -50,4 +50,9 @@ object FileUtils {
         }
         return null // Return null if the name cannot be found
     }
+
+    fun deleteFile(file: File): Boolean {
+        //TODO: delete .enc file and metadata perhaps as well as update recyclerview to display updated files
+        return file.delete()
+    }
 }

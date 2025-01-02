@@ -95,4 +95,11 @@ object EncryptionUtils {
         return ImageDecoder.decodeBitmap(source)
     }
 
+    fun restoreImage(file: File): Bitmap {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+        val iv = ByteArray(16) // 16 bytes for the IV
+        //TODO: restore image to users gallery and delete encrypted file
+        return BitmapFactory.decodeFile(file.absolutePath)
+    }
+
 }
