@@ -187,6 +187,7 @@ class AlbumActivity : AppCompatActivity() {
         fun addFile(file: File) {
             encryptedFiles.add(file)
             notifyItemInserted(encryptedFiles.size - 1)
+            FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
         }
 
         override fun getItemCount(): Int = encryptedFiles.size
