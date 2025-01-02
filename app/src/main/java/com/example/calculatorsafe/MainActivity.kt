@@ -60,6 +60,7 @@ class MainActivity : AppCompatActivity() {
         val mainRecyclerView: RecyclerView = findViewById(R.id.main_RecyclerView)
         val toolbar: MaterialToolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
+        toolbar.overflowIcon?.setTint(resources.getColor(R.color.white, theme))
 
         albumsDir = File(this.filesDir, "Albums")
         if (!albumsDir.exists()) {

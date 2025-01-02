@@ -4,19 +4,21 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:padding="4dp"
+
     android:background="@color/white">
 
     <ImageView
         android:id="@+id/album_thumbnail"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_marginEnd="8dp"
+        android:layout_margin="8dp"
         android:scaleType="centerCrop"
         android:adjustViewBounds="true"
 
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/album_name"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         />
 
     <TextView
@@ -53,8 +55,19 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginEnd="8dp"
 
-        android:src="@drawable/ic_option"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/menu"
+        tools:ignore="ContentDescription" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+
+        android:background="@color/darker_gray"
         />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
