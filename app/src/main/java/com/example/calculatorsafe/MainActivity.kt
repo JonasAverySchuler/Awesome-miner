@@ -90,11 +90,15 @@ class MainActivity : AppCompatActivity() {
                     //imageView.setImageResource(R.drawable.baseline_image_24)
                     //TODO: add placeholder image
                 }
+            },
+            onOptionClick = { album ->
+                showAlbumOptionsDialog(album)
             }
         )
 
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            //TODO: change thumbnail if needed
             if (result.resultCode == Activity.RESULT_OK) {
                 val updatedFileCount = result.data?.getIntExtra("updatedFileCount", 0) ?: 0
                 val albumId = result.data?.getStringExtra("albumId") ?: ""
@@ -155,6 +159,22 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showAlbumOptionsDialog(album: Album) {
+        AlertDialog.Builder(this)
+            .setTitle("Album Options").setItems(listOf("Rename", "Delete").toTypedArray()) { _, which ->
+                when (which) {
+                    0 -> {
+                        // Handle Rename option
+                        //showRenameDialog(context)
+                    }
+                    1 -> {
+                        // Handle Delete option
+                        //showDeleteConfirmationDialog(context)
+                    }
+                }
+            }.setCancelable(true).show()
     }
 
     private fun openAlbum(album: Album) {
@@ -344,7 +364,8 @@ class MainActivity : AppCompatActivity() {
     class AlbumAdapter(
         private val albums: MutableList<Album>,
         private val onAlbumClick: (Album) -> Unit,
-        private val onThumbnailReady: (ImageView, Bitmap?) -> Unit
+        private val onThumbnailReady: (ImageView, Bitmap?) -> Unit,
+        private val onOptionClick: (Album) -> Unit
     ) : RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder>() {
 
         inner class AlbumViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -371,7 +392,7 @@ class MainActivity : AppCompatActivity() {
             holder.albumName.text = album.name
             holder.photoCount.text = "${album.photoCount} photos"
             holder.optionsButton.setOnClickListener {
-                //TODO: show dialog for deleting or renaming album
+                onOptionClick(album)
             }
 
             loadThumbnailAsync(album, holder.albumThumbnail, onThumbnailReady)
