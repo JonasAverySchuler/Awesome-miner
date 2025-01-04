@@ -87,6 +87,10 @@ class AlbumActivity : AppCompatActivity() {
             { file -> EncryptionUtils.decryptImage(file) }
         ) {
             enterSelectionMode()
+        }.apply {
+            onSelectionChanged = {
+                updateSelectionSubtitle()
+            }
         }
 
         albumRecyclerView.adapter = adapter
@@ -188,7 +192,14 @@ class AlbumActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener {
             selectionModeCallback.handleOnBackPressed()
         }
+        toolbar.title = "Selection Mode"
+        updateSelectionSubtitle()
         // Show toolbar or action bar for operations like Restore/Delete
+    }
+    private fun updateSelectionSubtitle() {
+        val selectedCount = adapter.selectedItems.size
+        val totalCount = adapter.itemCount
+        toolbar.subtitle = "$selectedCount selected out of $totalCount"
     }
 
     private fun exitSelectionMode() {
@@ -199,6 +210,8 @@ class AlbumActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
+        toolbar.title = album.name
+        toolbar.subtitle = "${album.photoCount} images"
         // Hide toolbar or action bar
     }
 
@@ -222,6 +235,7 @@ class AlbumActivity : AppCompatActivity() {
             }
 
         val selectedItems = mutableSetOf<Int>()
+        var onSelectionChanged: (() -> Unit)? = null
 
         inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             private val cardView: CardView = view.findViewById(R.id.card_view)
@@ -248,8 +262,8 @@ class AlbumActivity : AppCompatActivity() {
                 }
                 itemView.setOnLongClickListener {
                     if (mode == Mode.VIEWING) {
-                        onEnterSelectionMode()
                         toggleSelection(position)
+                        onEnterSelectionMode()
                     }
                     true
                 }
@@ -284,6 +298,7 @@ class AlbumActivity : AppCompatActivity() {
                 selectedItems.add(position)
             }
             notifyItemChanged(position)
+            onSelectionChanged?.invoke()
         }
 
         fun getSelectedItems(): List<File> {
