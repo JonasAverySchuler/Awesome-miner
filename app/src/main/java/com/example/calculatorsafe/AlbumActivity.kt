@@ -15,10 +15,12 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
@@ -33,8 +35,10 @@ class AlbumActivity : AppCompatActivity() {
     private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumDirectoryPath: String
     private lateinit var album: MainActivity.Album
-    private lateinit var recyclerViewAdapter: EncryptedImageAdapter
+    private lateinit var adapter: EncryptedImageAdapter
     private lateinit var permissionHelper: PermissionHelper
+    private lateinit var selectionModeCallback: OnBackPressedCallback
+    private lateinit var toolbar: Toolbar
 
     companion object {
         private val TAG = "AlbumActivity"
@@ -52,13 +56,15 @@ class AlbumActivity : AppCompatActivity() {
         FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
         permissionHelper = PermissionHelper(this)
 
-        val toolbar = findViewById<Toolbar>(R.id.album_toolbar)
+        toolbar = findViewById<Toolbar>(R.id.album_toolbar)
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
+        val albumFab = findViewById<FloatingActionButton>(R.id.album_fab)
         val gridLayoutManager = GridLayoutManager(this, 3)
 
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = albumName
+        supportActionBar?.subtitle = "${encryptedFiles.size} images" //TODO: update on change and count other files types
 
         // Calculate and set item width dynamically
         val displayMetrics = resources.displayMetrics
@@ -67,18 +73,37 @@ class AlbumActivity : AppCompatActivity() {
         val itemWidth = (screenWidth - (spacing * 4)) / 3
 
         albumRecyclerView.layoutManager = gridLayoutManager
+        selectionModeCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                Log.e(TAG, "Back pressed")
+                exitSelectionMode()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, selectionModeCallback)
 
-        recyclerViewAdapter = EncryptedImageAdapter(encryptedFiles.toMutableList(), itemWidth) { file ->
-            EncryptionUtils.decryptImage(file)
+        adapter = EncryptedImageAdapter(
+            encryptedFiles.toMutableList(),
+            itemWidth,
+            { file -> EncryptionUtils.decryptImage(file) }
+        ) {
+            enterSelectionMode()
         }
 
-        albumRecyclerView.adapter = recyclerViewAdapter
+        albumRecyclerView.adapter = adapter
 
-        val albumFab = findViewById<FloatingActionButton>(R.id.album_fab)
         albumFab.setOnClickListener {
             checkAndRequestPermissions()
             }
+
+        toolbar.setNavigationOnClickListener {
+            if (selectionModeCallback.isEnabled) {
+                selectionModeCallback.handleOnBackPressed()
+            } else {
+                onBackPressedDispatcher.onBackPressed() // Default back behavior
+            }
         }
+
+    }
 
     // Inflate the menu (from menu_album.xml)
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -104,7 +129,6 @@ class AlbumActivity : AppCompatActivity() {
         }
     }
 
-
     private fun checkAndRequestPermissions() {
         //TODO: add support for selective permissions, test API levels and permissions
         val permissionsNeeded = mutableListOf<String>()
@@ -128,7 +152,6 @@ class AlbumActivity : AppCompatActivity() {
 
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            Log.e(TAG, "Result OK")
             val mediaUri: Uri? = result.data?.data
             mediaUri?.let {
                 // Handle the selected image or video URI
@@ -146,7 +169,6 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun handleSelectedMedia(mediaUri: Uri) {
-        Log.e(TAG, "handleSelectedMedia")
         val bitmap = getBitmapFromUri(contentResolver, mediaUri)
         val encryptedImage = EncryptionUtils.encryptImage(bitmap)
 
@@ -155,14 +177,36 @@ class AlbumActivity : AppCompatActivity() {
 
         //albumDirectoryPath will always have its parent directory and so it is safe to assert it, we need the parentDirectory Albums
         val newFilePath = saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
-        recyclerViewAdapter.addFile(File(newFilePath))
+        adapter.addFile(File(newFilePath))
         //deleteImageFromUri(mediaUri) //TODO: Delete file when i feel confident we have a working solution
+    }
+
+    private fun enterSelectionMode() {
+        adapter.mode = EncryptedImageAdapter.Mode.SELECTION
+        selectionModeCallback.isEnabled = true
+        toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.close)
+        toolbar.setNavigationOnClickListener {
+            selectionModeCallback.handleOnBackPressed()
+        }
+        // Show toolbar or action bar for operations like Restore/Delete
+    }
+
+    private fun exitSelectionMode() {
+        adapter.mode = EncryptedImageAdapter.Mode.VIEWING
+        adapter.selectedItems.clear()
+        selectionModeCallback.isEnabled = false
+        toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.back)
+        toolbar.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+        // Hide toolbar or action bar
     }
 
     class EncryptedImageAdapter(
         private val encryptedFiles: MutableList<File>,
         private val itemWidth: Int,
-        private val decryptFunction: (File) -> Bitmap
+        private val decryptFunction: (File) -> Bitmap,
+        private val onEnterSelectionMode: () -> Unit
         ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
             enum class Mode {
@@ -173,10 +217,11 @@ class AlbumActivity : AppCompatActivity() {
         var mode = Mode.VIEWING
             set(value) {
                 field = value
+                Log.e(TAG, "Mode changed to $value")
                 notifyDataSetChanged()
             }
 
-            private val selectedItems = mutableSetOf<Int>()
+        val selectedItems = mutableSetOf<Int>()
 
         inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             private val cardView: CardView = view.findViewById(R.id.card_view)
@@ -203,7 +248,7 @@ class AlbumActivity : AppCompatActivity() {
                 }
                 itemView.setOnLongClickListener {
                     if (mode == Mode.VIEWING) {
-                        mode = Mode.SELECTION
+                        onEnterSelectionMode()
                         toggleSelection(position)
                     }
                     true
