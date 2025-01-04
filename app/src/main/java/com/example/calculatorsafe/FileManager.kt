@@ -1,6 +1,6 @@
 package com.example.calculatorsafe
 
-object FilePathManager {
+object FileManager {
     private val filePaths = mutableListOf<String>()
 
     // Add file paths

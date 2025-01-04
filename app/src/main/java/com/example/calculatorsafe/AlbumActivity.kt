@@ -17,16 +17,17 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
-import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
+import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
+import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -55,7 +56,7 @@ class AlbumActivity : AppCompatActivity() {
         album = MainActivity.Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
 
         val encryptedFiles = File(albumDirectoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
-        FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+        FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
         permissionHelper = PermissionHelper(this)
 
         toolbar = findViewById<Toolbar>(R.id.album_toolbar)
@@ -77,7 +78,6 @@ class AlbumActivity : AppCompatActivity() {
         albumRecyclerView.layoutManager = gridLayoutManager
         selectionModeCallback = object : OnBackPressedCallback(false) {
             override fun handleOnBackPressed() {
-                Log.e(TAG, "Back pressed")
                 exitSelectionMode()
             }
         }
@@ -126,6 +126,9 @@ class AlbumActivity : AppCompatActivity() {
             }
             R.id.action_delete -> {
                 // Handle delete action
+                if (adapter.selectedItems.isNotEmpty()) {
+                    showDeleteConfirmationDialog()
+                }
                 true
             }
             R.id.action_restore -> {
@@ -133,6 +136,26 @@ class AlbumActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder.setMessage("Are you sure you want to delete the selected files?")
+            .setCancelable(false)
+            .setPositiveButton("Yes") { dialog, id ->
+                // Proceed with the deletion if the user confirms
+                adapter.deleteSelectedFiles()
+                //Make sure WRITE_EXTERNAL_STORAGE is granted
+                updateSelectionSubtitle()
+                exitSelectionMode()  // Update UI with remaining selections
+            }
+            .setNegativeButton("No") { dialog, id ->
+                // Do nothing if the user cancels
+                dialog.dismiss()
+            }
+
+        val alert = dialogBuilder.create()
+        alert.show()
     }
 
     private fun checkAndRequestPermissions() {
@@ -184,6 +207,7 @@ class AlbumActivity : AppCompatActivity() {
         //albumDirectoryPath will always have its parent directory and so it is safe to assert it, we need the parentDirectory Albums
         val newFilePath = saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
         adapter.addFile(File(newFilePath))
+        toolbar.subtitle = "${adapter.itemCount} images"
         //deleteImageFromUri(mediaUri) //TODO: Delete file when i feel confident we have a working solution
     }
 
@@ -213,7 +237,7 @@ class AlbumActivity : AppCompatActivity() {
             onBackPressedDispatcher.onBackPressed()
         }
         toolbar.title = album.name
-        toolbar.subtitle = "${album.photoCount} images"
+        toolbar.subtitle = "${adapter.itemCount} images"
         // Hide toolbar or action bar
     }
 
@@ -232,7 +256,6 @@ class AlbumActivity : AppCompatActivity() {
         var mode = Mode.VIEWING
             set(value) {
                 field = value
-                Log.e(TAG, "Mode changed to $value")
                 notifyDataSetChanged()
             }
 
@@ -310,7 +333,30 @@ class AlbumActivity : AppCompatActivity() {
         fun addFile(file: File) {
             encryptedFiles.add(file)
             notifyItemInserted(encryptedFiles.size - 1)
-            FilePathManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+            FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+        }
+
+        // Deletes selected files
+        fun deleteSelectedFiles() {
+            // Sort items from highest to lowest index to avoid index shifting during removal
+            val sortedSelectedItems = selectedItems.sortedDescending()
+            for (position in sortedSelectedItems) {
+                val file = encryptedFiles[position]
+                if (file.exists() && file.delete()) {
+                    // Successfully deleted the file
+                    encryptedFiles.removeAt(position)  // Remove from the list
+                    notifyItemRemoved(position)  // Notify the RecyclerView to update
+                } else {
+                    // Handle failure if necessary, e.g., show a message to the user
+                    Log.e("Delete", "Failed to delete file: ${file.name}")
+                }
+            }
+            selectedItems.clear()  // Clear the selection after deletion
+        }
+
+        fun clearSelection() {
+            selectedItems.clear()
+            notifyDataSetChanged()
         }
 
         override fun getItemCount(): Int = encryptedFiles.size

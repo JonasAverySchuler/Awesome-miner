@@ -16,7 +16,7 @@ class MediaViewActivity : AppCompatActivity() {
         val btnDelete = findViewById<Button>(R.id.btnDelete)
         val btnShare = findViewById<Button>(R.id.btnShare)
 
-        val imagePaths = FilePathManager.getFilePaths()
+        val imagePaths = FileManager.getFilePaths()
         Log.e("MediaViewActivity", "Image paths: $imagePaths")
         val startPosition = intent.getIntExtra("position", 0)
         val adapter = ImagePagerAdapter(imagePaths)
