@@ -165,6 +165,17 @@ class AlbumActivity : AppCompatActivity() {
         private val decryptFunction: (File) -> Bitmap
         ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
+            enum class Mode {
+                VIEWING,
+                SELECTION
+            }
+
+        var mode = Mode.VIEWING
+            set(value) {
+                field = value
+                notifyDataSetChanged()
+            }
+
             private val selectedItems = mutableSetOf<Int>()
 
         inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -172,11 +183,31 @@ class AlbumActivity : AppCompatActivity() {
             private val photoImageView: ImageView = view.findViewById(R.id.photo_image_view)
             private val overlay: View = itemView.findViewById(R.id.overlay) // A semi-transparent View
 
-            fun bind(file: File, isSelected: Boolean) {
+            fun bind(file: File,position: Int, isSelected: Boolean) {
                 val decryptedBitmap = decryptFunction(file)
                 photoImageView.setImageBitmap(decryptedBitmap)
                 // Show or hide the selection overlay
                 overlay.visibility = if (isSelected) View.VISIBLE else View.GONE
+                itemView.setOnClickListener {
+                    when (mode) {
+                        Mode.VIEWING -> {
+                            val intent = Intent(itemView.context, MediaViewActivity::class.java)
+                            intent.putExtra("position", position)
+                            itemView.context.startActivity(intent)
+                        }
+                        Mode.SELECTION -> {
+                            toggleSelection(position)
+                            notifyItemChanged(position)
+                        }
+                    }
+                }
+                itemView.setOnLongClickListener {
+                    if (mode == Mode.VIEWING) {
+                        mode = Mode.SELECTION
+                        toggleSelection(position)
+                    }
+                    true
+                }
             }
 
             fun setItemWidth(width: Int) {
@@ -198,20 +229,7 @@ class AlbumActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
             holder.setItemWidth(itemWidth)
             val encryptedFile = encryptedFiles[position]
-            holder.bind(encryptedFile, selectedItems.contains(position))
-            //val decryptedBitmap = decryptFunction(encryptedFile)
-            //holder.photoImageView.setImageBitmap(decryptedBitmap)
-            holder.itemView.setOnClickListener {
-                val intent = Intent(holder.itemView.context, MediaViewActivity::class.java)
-                intent.putExtra("position", position)
-                holder.itemView.context.startActivity(intent)
-            }
-            holder.itemView.setOnLongClickListener {
-                toggleSelection(position)
-                //listener(selecteditem.size)
-                notifyItemChanged(position)
-                true
-            }
+            holder.bind(encryptedFile, position, selectedItems.contains(position))
         }
 
         fun toggleSelection(position: Int) {
