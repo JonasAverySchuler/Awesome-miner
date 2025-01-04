@@ -1,4 +1,4 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.utils
 
 import android.content.Context
 import android.net.Uri
@@ -33,7 +33,7 @@ object FileUtils {
     fun getImageFileCountFromAlbum(albumDirectory: File): Int {
         val imageFiles = albumDirectory.listFiles()?.filter {
             // Check if the file is an image by its extension or MIME type or is an encoded file
-            it.isFile && FileUtils.isImageFile(it) || it.name.endsWith(".enc", ignoreCase = true)
+            it.isFile && isImageFile(it) || it.name.endsWith(".enc", ignoreCase = true)
         } ?: emptyList()
 
         return imageFiles.size

@@ -2,6 +2,7 @@ package com.example.calculatorsafe
 
 import android.graphics.Bitmap
 import android.widget.ImageView
+import com.example.calculatorsafe.utils.EncryptionUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

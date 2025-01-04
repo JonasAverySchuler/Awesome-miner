@@ -1,4 +1,4 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.utils
 
 import android.content.ContentResolver
 import android.content.Context

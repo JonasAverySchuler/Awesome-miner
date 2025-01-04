@@ -3,7 +3,7 @@ package com.example.calculatorsafe
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.EncryptionUtils.decryptImage
+import com.example.calculatorsafe.utils.EncryptionUtils.decryptImage
 import java.io.File
 
 class ImagePagerAdapter(

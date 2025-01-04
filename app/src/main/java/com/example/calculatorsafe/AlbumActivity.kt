@@ -23,10 +23,12 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.EncryptionUtils.getBitmapFromUri
-import com.example.calculatorsafe.EncryptionUtils.saveEncryptedImageToStorage
-import com.example.calculatorsafe.FileUtils.getImageFileCountFromAlbum
+import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
+import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.PreferenceHelper.getAlbumId
+import com.example.calculatorsafe.utils.EncryptionUtils
+import com.example.calculatorsafe.utils.FileUtils
+import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 
