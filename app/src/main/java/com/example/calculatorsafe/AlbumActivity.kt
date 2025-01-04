@@ -54,7 +54,6 @@ class AlbumActivity : AppCompatActivity() {
         setContentView(R.layout.activity_album)
         val albumName = intent.getStringExtra("albumName") ?: ""
         albumDirectoryPath = intent.getStringExtra("albumDirectoryPath") ?: ""
-        Log.e(TAG, "directoryPath: $albumDirectoryPath")
         album = MainActivity.Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
 
         val encryptedFiles = File(albumDirectoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
@@ -69,7 +68,7 @@ class AlbumActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = albumName
-        supportActionBar?.subtitle = "${encryptedFiles.size} images" //TODO: update on change and count other files types
+        supportActionBar?.subtitle = "${encryptedFiles.size} images" //TODO:count other files types
 
         // Calculate and set item width dynamically
         val displayMetrics = resources.displayMetrics
@@ -105,12 +104,22 @@ class AlbumActivity : AppCompatActivity() {
 
         toolbar.setNavigationOnClickListener {
             if (selectionModeCallback.isEnabled) {
+                Log.e("AlbumActivity", "Back pressed selectioncallback enabled")
                 selectionModeCallback.handleOnBackPressed()
             } else {
+                setResultIntent()
                 onBackPressedDispatcher.onBackPressed() // Default back behavior
             }
         }
 
+    }
+
+    private fun setResultIntent() {
+        // Send the result back to MainActivity
+        val resultIntent = Intent()
+        resultIntent.putExtra("updatedFileCount", FileManager.getSize())
+        resultIntent.putExtra("albumId", album.albumID)  // Send the album ID
+        setResult(Activity.RESULT_OK, resultIntent)
     }
 
     // Inflate the menu (from menu_album.xml)
@@ -120,7 +129,7 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        //TODO: add options for deleting,restoring,sorting
+        //TODO: add options for restoring,sorting
         return when (item.itemId) {
             android.R.id.home -> {
                 finish() // Closes the activity and goes back to the previous one
@@ -144,7 +153,6 @@ class AlbumActivity : AppCompatActivity() {
         // Inflate the custom layout
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
 
-        // Get references to the buttons and message view
         val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
         val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
         val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
@@ -192,7 +200,6 @@ class AlbumActivity : AppCompatActivity() {
             // Permissions are already granted
             accessUserImages()
         }
-
     }
 
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -250,6 +257,7 @@ class AlbumActivity : AppCompatActivity() {
         selectionModeCallback.isEnabled = false
         toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.back)
         toolbar.setNavigationOnClickListener {
+            setResultIntent()
             onBackPressedDispatcher.onBackPressed()
         }
         toolbar.title = album.name

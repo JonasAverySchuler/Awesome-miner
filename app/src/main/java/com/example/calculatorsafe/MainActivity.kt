@@ -16,9 +16,11 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,15 +28,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
-import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
-import com.example.calculatorsafe.utils.FileUtils.getAlbumPath
-import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.example.calculatorsafe.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.PreferenceHelper.saveAlbumMetadata
 import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
 import com.example.calculatorsafe.utils.EncryptionUtils
+import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
+import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.utils.FileUtils
+import com.example.calculatorsafe.utils.FileUtils.getAlbumPath
+import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.w3c.dom.Document
@@ -52,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var albumAdapter: AlbumAdapter
     private lateinit var albums: MutableList<Album>
     private var targetAlbum: Album? = null
+    private lateinit var albumActivityResultLauncher: ActivityResultLauncher<Intent>
 
     companion object{
         private val TAG = "MainActivity"
@@ -89,6 +92,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+
+        // Register the ActivityResultLauncher
+        albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val updatedFileCount = result.data?.getIntExtra("updatedFileCount", 0) ?: 0
+                val albumId = result.data?.getStringExtra("albumId") ?: ""
+                if (albumId.isNotEmpty()) {
+                    albumAdapter.updateAlbumFileCount(albumId, updatedFileCount)  // Update the specific album
+                }
+            }
+        }
 
         mainRecyclerView.adapter = albumAdapter
 
@@ -147,8 +161,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, AlbumActivity::class.java)
         intent.putExtra("albumName", album.name)
         intent.putExtra("albumDirectoryPath", getAlbumPath(albumsDir, album.name))
-        startActivity(intent)
-        //TODO: refresh in case media was added to album
+        albumActivityResultLauncher.launch(intent)
     }
 
     private fun createNewAlbum(context: Context) {
@@ -338,6 +351,7 @@ class MainActivity : AppCompatActivity() {
             val albumThumbnail: ImageView = view.findViewById(R.id.album_thumbnail)
             val albumName: TextView = view.findViewById(R.id.album_name)
             val photoCount: TextView = view.findViewById(R.id.photo_count)
+            val optionsButton: ImageButton = view.findViewById(R.id.album_options_button)
 
             init {
                 view.setOnClickListener {
@@ -356,6 +370,9 @@ class MainActivity : AppCompatActivity() {
             // Set album thumbnail (if applicable), name, and photo count
             holder.albumName.text = album.name
             holder.photoCount.text = "${album.photoCount} photos"
+            holder.optionsButton.setOnClickListener {
+                //TODO: show dialog for deleting or renaming album
+            }
 
             loadThumbnailAsync(album, holder.albumThumbnail, onThumbnailReady)
         }
@@ -365,6 +382,12 @@ class MainActivity : AppCompatActivity() {
         fun addAlbum(album: Album) {
             albums.add(album)
             notifyItemInserted(albums.size - 1)
+        }
+
+        fun updateAlbumFileCount(albumId: String, updatedFileCount: Int) {
+            val album = albums.find { it.albumID == albumId }
+            album?.photoCount = updatedFileCount
+            notifyDataSetChanged()
         }
     }
 
