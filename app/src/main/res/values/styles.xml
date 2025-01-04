@@ -19,4 +19,10 @@
         <item name="android:popupBackground">@null</item>
     </style>
 
+    <style name="CustomAlertDialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <!-- Customize the title color -->
+        <item name="android:textColorPrimary">@color/black</item> <!-- or your preferred color -->
+        <!-- Customize other dialog properties like background or button styles if needed -->
+    </style>
+
 </resources>

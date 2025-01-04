@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
         val albums = getAlbums(context).toMutableList() // Replace with your method to fetch album names
         val albumNames = albums.map { it.name }.toTypedArray()
 
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setTitle("Choose an Album to store media")
             .setItems(albumNames) { _, which ->
                 targetAlbum = albums[which]
@@ -162,7 +162,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAlbumOptionsDialog(album: Album) {
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setTitle("Album Options").setItems(listOf("Rename", "Delete").toTypedArray()) { _, which ->
                 when (which) {
                     0 -> {
@@ -193,7 +193,7 @@ class MainActivity : AppCompatActivity() {
         val editText = EditText(this)
         editText.hint = "Enter album name"
 
-        val dialog = AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setTitle("New Album")
             .setView(editText)
             .setPositiveButton("Create") { _, _ ->
