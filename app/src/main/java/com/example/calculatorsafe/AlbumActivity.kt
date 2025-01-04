@@ -14,7 +14,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -139,23 +141,37 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmationDialog() {
-        val dialogBuilder = AlertDialog.Builder(this)
-        dialogBuilder.setMessage("Are you sure you want to delete the selected files?")
-            .setCancelable(false)
-            .setPositiveButton("Yes") { dialog, id ->
-                // Proceed with the deletion if the user confirms
-                adapter.deleteSelectedFiles()
-                //Make sure WRITE_EXTERNAL_STORAGE is granted
-                updateSelectionSubtitle()
-                exitSelectionMode()  // Update UI with remaining selections
-            }
-            .setNegativeButton("No") { dialog, id ->
-                // Do nothing if the user cancels
-                dialog.dismiss()
-            }
+        // Inflate the custom layout
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
 
-        val alert = dialogBuilder.create()
-        alert.show()
+        // Get references to the buttons and message view
+        val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
+        val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
+        val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
+
+        // Set text color or other properties if needed
+        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.black))  // Ensure text color is black
+
+        // Create the AlertDialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)  // Use the custom layout
+            .setCancelable(false)
+            .create()
+
+        // Set button listeners
+        positiveButton.setOnClickListener {
+            // Proceed with the deletion if the user confirms
+            adapter.deleteSelectedFiles()
+            exitSelectionMode()  // Exit selection mode after deletion
+            dialog.dismiss()
+        }
+
+        negativeButton.setOnClickListener {
+            dialog.dismiss()  // Do nothing if the user cancels
+        }
+
+        // Show the dialog
+        dialog.show()
     }
 
     private fun checkAndRequestPermissions() {
@@ -352,6 +368,7 @@ class AlbumActivity : AppCompatActivity() {
                 }
             }
             selectedItems.clear()  // Clear the selection after deletion
+            FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
         }
 
         fun clearSelection() {
