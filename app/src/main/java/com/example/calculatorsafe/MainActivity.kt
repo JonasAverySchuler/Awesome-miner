@@ -146,14 +146,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAlbumSelector(context: Context) {
-        //TODO: improve Dialog
         val albums = getAlbums(context).toMutableList() // Replace with your method to fetch album names
+        if (albums.isEmpty()) {
+            Toast.makeText(this, "No albums found", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val albumNames = albums.map { it.name }.toTypedArray()
 
         AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setTitle("Choose an Album to store media")
-            .setItems(albumNames) { _, which ->
+            .setItems(albumNames) { dialog, which ->
                 targetAlbum = albums[which]
+                dialog.dismiss()
                 checkAndRequestPermissions()
             }
             .setNegativeButton("Cancel", null)
@@ -284,6 +289,7 @@ class MainActivity : AppCompatActivity() {
         // Your code to pick images or videos from the gallery
         val pickMediaIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
             type = "image/* video/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         pickMediaLauncher.launch(pickMediaIntent)
     }
@@ -296,10 +302,19 @@ class MainActivity : AppCompatActivity() {
 
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val mediaUri: Uri? = result.data?.data
-            mediaUri?.let {
-                // Handle the selected image or video URI
-                handleSelectedMedia(it)
+            result.data?.let { intent ->
+                // Handle multiple selected files
+                intent.clipData?.let { clipData ->
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        handleSelectedMedia(uri)
+                    }
+                } ?: run {
+                    // Handle single selected file
+                    intent.data?.let { uri ->
+                        handleSelectedMedia(uri)
+                    }
+                }
             }
         }
     }
