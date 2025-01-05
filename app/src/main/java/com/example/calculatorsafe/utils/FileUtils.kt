@@ -5,6 +5,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import java.io.File
 import java.net.URLConnection
+import java.util.UUID
 
 object FileUtils {
 
@@ -51,8 +52,7 @@ object FileUtils {
         return null // Return null if the name cannot be found
     }
 
-    fun deleteFile(file: File): Boolean {
-        //TODO: delete .enc file and metadata perhaps as well as update recyclerview to display updated files
-        return file.delete()
+    fun generateAlbumId(): String {
+        return UUID.randomUUID().toString()
     }
 }

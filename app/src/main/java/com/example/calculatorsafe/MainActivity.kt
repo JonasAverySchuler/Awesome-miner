@@ -11,6 +11,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.text.InputFilter
 import android.util.Log
@@ -40,6 +42,7 @@ import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
 import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.utils.FileUtils
+import com.example.calculatorsafe.utils.FileUtils.generateAlbumId
 import com.example.calculatorsafe.utils.FileUtils.getAlbumPath
 import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.google.android.material.appbar.MaterialToolbar
@@ -47,7 +50,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.w3c.dom.Document
 import java.io.File
 import java.io.FileOutputStream
-import java.util.UUID
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -112,7 +114,7 @@ class MainActivity : AppCompatActivity() {
                 val updatedFileCount = result.data?.getIntExtra("updatedFileCount", 0) ?: 0
                 val albumId = result.data?.getStringExtra("albumId") ?: ""
                 if (albumId.isNotEmpty()) {
-                    albumAdapter.updateAlbumFileCount(albumId, updatedFileCount)  // Update the specific album
+                    albumAdapter.updateAlbumFileCount(albumId, updatedFileCount)
                 }
             }
         }
@@ -124,6 +126,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!PreferenceHelper.isPasscodeSet(this)) {
+            //TODO: passcode setup
             // Passcode not set, navigate to passcode setup activity
             val intent = Intent(this, PasscodeSetupActivity::class.java)
             //startActivity(intent)
@@ -156,7 +159,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAlbumSelector(context: Context) {
-        val albums = getAlbums(context).toMutableList() // Replace with your method to fetch album names
+        val albums = getAlbums(context).toMutableList()
         if (albums.isEmpty()) {
             Toast.makeText(this, "No albums found", Toast.LENGTH_SHORT).show()
             return
@@ -318,6 +321,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun deleteAlbumAndContents(album: Album) {
+        //TODO: error check this
         val albumDir = File(album.pathString)
         albumDir.deleteRecursively()
         albums.remove(album)
@@ -338,10 +342,6 @@ class MainActivity : AppCompatActivity() {
             val photoCount = (getImageFileCountFromAlbum(dir))
             Album(dir.name, photoCount, getAlbumId(context, dir.name) ?: "", dir.absolutePath)
         }
-    }
-
-    private fun generateAlbumId(): String {
-        return UUID.randomUUID().toString()
     }
 
     private fun checkAndRequestPermissions() {
@@ -462,9 +462,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePhotoCount(album: Album?) {
+        Log.e("MainActivity", "Updating photo count for album: ${album?.name}")
         album?.let {
             // Get the current count of image files in the album directory
-            val albumDir = File(getAlbumPath(albumsDir,album.name)) // Get the path of the album
+            val albumDir = File(getAlbumPath(albumsDir, album.name)) // Get the path of the album
             val imageCount = getImageFileCountFromAlbum(albumDir)
             // Increment the photo count
             it.photoCount = imageCount
@@ -531,8 +532,19 @@ class MainActivity : AppCompatActivity() {
 
         fun updateAlbumFileCount(albumId: String, updatedFileCount: Int) {
             val album = albums.find { it.albumID == albumId }
-            album?.photoCount = updatedFileCount
-            notifyDataSetChanged()
+            album?.let {
+                val position = albums.indexOf(it)
+                Log.d("AlbumAdapter", "Updating album file count for album: ${it.name}, position: $position")
+                if (position != -1) {
+                    val handler = Handler(Looper.getMainLooper()) //A bug was causing the photo count to not update in the recyclerview, a log statement fixed it and unsure why. So explictly make sure the ui thread is handling this and it also fixes the bug.
+                    handler.post {
+                        it.photoCount = updatedFileCount
+                        albums[position] = it
+                        this.notifyItemChanged(position)
+                    }
+
+                }
+            }
         }
     }
 
