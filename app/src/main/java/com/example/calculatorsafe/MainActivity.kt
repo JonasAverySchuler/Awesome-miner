@@ -15,6 +15,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -173,18 +174,75 @@ class MainActivity : AppCompatActivity() {
 
     private fun showAlbumOptionsDialog(album: Album) {
         AlertDialog.Builder(this, R.style.CustomAlertDialog)
-            .setTitle("Album Options").setItems(listOf("Rename", "Delete").toTypedArray()) { _, which ->
+            .setTitle("Album Options").setItems(listOf("Rename", "Delete").toTypedArray()) { dialog, which ->
                 when (which) {
                     0 -> {
                         // Handle Rename option
-                        //showRenameDialog(context)
+                        showRenameAlbumDialog(album)
+                        dialog.dismiss()
                     }
                     1 -> {
-                        // Handle Delete option
-                        //showDeleteConfirmationDialog(context)
+                        showDeleteAlbumConfirmationDialog(album)
+                        dialog.dismiss()
                     }
                 }
             }.setCancelable(true).show()
+    }
+
+    private fun showDeleteAlbumConfirmationDialog(album: Album) {
+        // Inflate the custom layout
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
+
+        val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
+        val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
+        val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
+
+        // Set text color or other properties if needed
+        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))  // Ensure text color is black
+        messageView.text = "Are you sure you want to delete this album and its contents?"
+        // Create the AlertDialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)  // Use the custom layout
+            .setCancelable(false)
+            .create()
+
+        // Set button listeners
+        positiveButton.setOnClickListener {
+            // Proceed with the deletion if the user confirms
+            deleteAlbumAndContents(album)
+            dialog.dismiss()
+        }
+
+        negativeButton.setOnClickListener {
+            dialog.dismiss()  // Do nothing if the user cancels
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
+    private fun showRenameAlbumDialog(album: Album) {
+        // Inflate the custom layout
+        val editText = EditText(this)
+        editText.hint = "Enter new album name"
+
+        val dialog = AlertDialog.Builder(this, R.style.CustomAlertDialog)
+            .setTitle("Rename Album")
+            .setView(editText)
+            .setPositiveButton("Confirm") { _, _ ->
+                val albumName = editText.text.toString().trim()
+                if (albumName.isNotEmpty()) {
+                    //renameAlbum(context,albumName)
+                    // Refresh the RecyclerView
+                    albumAdapter.notifyDataSetChanged()
+                } else {
+                    Toast.makeText(this, "Album name cannot be empty", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
     }
 
     private fun openAlbum(album: Album) {
@@ -232,6 +290,13 @@ class MainActivity : AppCompatActivity() {
             val newAlbum = Album(albumName, 0, albumId, albumDir.absolutePath)
             albumAdapter.addAlbum(newAlbum)
         }
+    }
+
+    private fun deleteAlbumAndContents(album: Album) {
+        val albumDir = File(album.pathString)
+        albumDir.deleteRecursively()
+        albums.remove(album)
+        albumAdapter.notifyDataSetChanged()
     }
 
     fun updateAlbumName(context: Context, oldAlbumName: String, newAlbumName: String) {
