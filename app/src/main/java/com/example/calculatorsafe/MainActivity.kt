@@ -1,5 +1,6 @@
 package com.example.calculatorsafe
 
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
@@ -321,7 +322,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndRequestPermissions() {
         val permissionsNeeded = mutableListOf<String>()
-        //add if below a certain API level to check for different permission names
+
+        //API 32 and below you need to request READ_EXTERNAL_STORAGE
+        if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            permissionsNeeded.add(READ_EXTERNAL_STORAGE)
+        }
+
         if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
             permissionsNeeded.add(READ_MEDIA_IMAGES)
         }
@@ -329,8 +335,8 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
             permissionsNeeded.add(READ_MEDIA_VIDEO)
         }
-
         if (permissionsNeeded.isNotEmpty()) {
+            Log.e(TAG, "Requesting permissions: $permissionsNeeded")
             ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
         } else {
             // Permissions are already granted
