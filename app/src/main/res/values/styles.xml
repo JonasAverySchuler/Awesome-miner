@@ -6,9 +6,6 @@
         <item name="colorPrimary">#1A2A6C</item>
         <item name="android:windowTranslucentStatus">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-
-        <!-- Set toolbar text color to white -->
-        <item name="android:textColorPrimary">#FFFFFF</item>
     </style>
 
     <style name="defaultToolbarTheme" parent="Theme.MaterialComponents.NoActionBar">

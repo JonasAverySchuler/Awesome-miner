@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.InputFilter
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -142,7 +143,7 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_new_album -> {
                 // Handle "New Album" action
-                createNewAlbum(this)
+                showNewAlbumDialog(this)
                 true
             }
             R.id.action_settings -> {
@@ -233,12 +234,12 @@ class MainActivity : AppCompatActivity() {
             .setView(editText)
             .setPositiveButton("Confirm") { _, _ ->
                 val albumName = editText.text.toString().trim()
-                if (albumName.isNotEmpty()) {
+                if (isValidAlbumName(albumName)) {
                     //renameAlbum(context,albumName)
                     // Refresh the RecyclerView
                     albumAdapter.notifyDataSetChanged()
                 } else {
-                    Toast.makeText(this, "Album name cannot be empty", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Invalid album name", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -254,26 +255,22 @@ class MainActivity : AppCompatActivity() {
         albumActivityResultLauncher.launch(intent)
     }
 
-    private fun createNewAlbum(context: Context) {
-        //TODO: error check and improve Dialogs
-        showNewAlbumDialog(context)
-    }
-
     private fun showNewAlbumDialog(context: Context) {
         val editText = EditText(this)
         editText.hint = "Enter album name"
+        editText.filters = arrayOf(InputFilter.LengthFilter(40))
 
         val dialog = AlertDialog.Builder(this, R.style.CustomAlertDialog)
             .setTitle("New Album")
             .setView(editText)
             .setPositiveButton("Create") { _, _ ->
                 val albumName = editText.text.toString().trim()
-                if (albumName.isNotEmpty()) {
+                if (isValidAlbumName(albumName)) {
                     createAlbum(context,albumName)
                     // Refresh the RecyclerView
                     albumAdapter.notifyDataSetChanged()
                 } else {
-                    Toast.makeText(this, "Album name cannot be empty", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Invalid album name", Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -281,6 +278,32 @@ class MainActivity : AppCompatActivity() {
 
         dialog.show()
     }
+
+    private fun isValidAlbumName(albumName: String): Boolean {
+        // Check if the album name is not empty
+        if (albumName.isEmpty()) {
+            return false
+        }
+
+        // Set a reasonable character limit (e.g., 50 characters)
+        if (albumName.length > 50) {
+            return false
+        }
+
+        // Disallow multiple spaces in a row
+        if (albumName.contains("  ")) {
+            return false
+        }
+
+        // Check for invalid characters (only letters, numbers, and spaces allowed)
+        val regex = "^[a-zA-Z0-9 ]*$".toRegex()
+        if (!albumName.matches(regex)) {
+            return false
+        }
+
+        return true
+    }
+
 
     private fun createAlbum(context: Context,albumName: String) {
         val albumDir = File(albumsDir, albumName)
@@ -376,6 +399,7 @@ class MainActivity : AppCompatActivity() {
     private fun showPermissionDeniedMessage() {
         // Show a message to the user explaining why the permission is needed
         Toast.makeText(this, "Permissions denied", Toast.LENGTH_SHORT).show()
+        //TODO: send user to settings to enable permissions
         //show dialog telling user permissions are required and to enable them to access features
     }
 
