@@ -5,7 +5,7 @@
     <item
         android:id="@+id/action_new_album"
         android:title="New Album"
-        android:icon="@drawable/add_white"
+        android:icon="@drawable/new_album"
         app:showAsAction="always"
         />
 

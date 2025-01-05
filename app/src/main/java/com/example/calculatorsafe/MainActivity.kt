@@ -548,7 +548,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun deleteAlbum(album: Album) {
-            val position = albums.indexOf(album)
+            val position = albums.indexOf(album) //TODO: returning -1 sometimes when it shouldnt but not crashing it, need to debug
             if (position != -1) {
                 albums.removeAt(position)
             } else {
