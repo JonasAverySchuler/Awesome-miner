@@ -7,6 +7,7 @@ object PreferenceHelper {
     private const val PREFS_NAME = "PicVaultPrefs"
     private const val PREF_PASSCODE_SET = "passcode_set"
     private const val PREF_PASSCODE = "passcode"
+    private const val IS_FIRST_RUN = "is_first_run"
 
 
     fun isPasscodeSet(context: Context): Boolean {
@@ -33,5 +34,15 @@ object PreferenceHelper {
     fun getAlbumId(context: Context, albumName: String): String? {
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         return prefs.getString(albumName, null)
+    }
+
+    fun isFirstRun(context: Context): Boolean {
+        val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return sharedPreferences.getBoolean(IS_FIRST_RUN, true)
+    }
+
+    fun setFirstRun(context: Context, isFirstRun: Boolean) {
+        val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sharedPreferences.edit().putBoolean(IS_FIRST_RUN, isFirstRun).apply()
     }
 }

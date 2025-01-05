@@ -74,6 +74,12 @@ class MainActivity : AppCompatActivity() {
         if (!albumsDir.exists()) {
             albumsDir.mkdirs() // Create albums directory if it doesn't exist
         }
+        // Create the "Main" album inside "Albums" on first run
+        if (PreferenceHelper.isFirstRun(this)) {
+            val mainAlbumDir = File(albumsDir, "Main")
+            mainAlbumDir.mkdir() // Create "Main" album if it doesn't exist
+            PreferenceHelper.setFirstRun(this, false)
+        }
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
         albums = getAlbums(this).toMutableList()
