@@ -319,7 +319,6 @@ class MainActivity : AppCompatActivity() {
         return UUID.randomUUID().toString()
     }
 
-
     private fun checkAndRequestPermissions() {
         val permissionsNeeded = mutableListOf<String>()
         //add if below a certain API level to check for different permission names

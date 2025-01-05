@@ -241,10 +241,21 @@ class AlbumActivity : AppCompatActivity() {
 
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val mediaUri: Uri? = result.data?.data
-            mediaUri?.let {
-                // Handle the selected image or video URI
-                handleSelectedMedia(it)
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.let { intent ->
+                    // Handle multiple selected files
+                    intent.clipData?.let { clipData ->
+                        for (i in 0 until clipData.itemCount) {
+                            val uri = clipData.getItemAt(i).uri
+                            handleSelectedMedia(uri)
+                        }
+                    } ?: run {
+                        // Handle single selected file
+                        intent.data?.let { uri ->
+                            handleSelectedMedia(uri)
+                        }
+                    }
+                }
             }
         }
     }
@@ -253,6 +264,7 @@ class AlbumActivity : AppCompatActivity() {
         // Your code to pick images or videos from the gallery
         val pickMediaIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
             type = "image/* video/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         pickMediaLauncher.launch(pickMediaIntent)
     }
