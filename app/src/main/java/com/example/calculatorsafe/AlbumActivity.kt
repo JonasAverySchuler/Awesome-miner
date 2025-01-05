@@ -31,7 +31,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.PreferenceHelper.getAlbumId
+import com.example.calculatorsafe.helpers.PermissionHelper
+import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
 import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage

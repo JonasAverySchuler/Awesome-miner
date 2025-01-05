@@ -7,7 +7,7 @@ import com.example.calculatorsafe.utils.EncryptionUtils.decryptImage
 import java.io.File
 
 class ImagePagerAdapter(
-    private val imagePaths: List<String>
+    private val imagePaths: MutableList<String>
 ) : RecyclerView.Adapter<ImagePagerAdapter.ImageViewHolder>() {
 
     inner class ImageViewHolder(itemView: ImageView) : RecyclerView.ViewHolder(itemView) {
@@ -37,4 +37,21 @@ class ImagePagerAdapter(
     }
 
     override fun getItemCount(): Int = imagePaths.size
+
+    fun deleteFileAt(position: Int): String? {
+        if (position in imagePaths.indices) {
+            val deletedImagePath = imagePaths.removeAt(position)
+            notifyItemRemoved(position)
+            return deletedImagePath
+        }
+        return null
+    }
+
+    fun restoreImage(position: Int) {
+        val imagePath = imagePaths[position]
+        val file = File(imagePath)
+        if (file.exists()) {
+            file.delete()
+        }
+    }
 }

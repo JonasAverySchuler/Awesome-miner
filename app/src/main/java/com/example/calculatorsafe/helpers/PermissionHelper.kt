@@ -1,4 +1,4 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.helpers
 
 import android.app.Activity
 import android.content.pm.PackageManager

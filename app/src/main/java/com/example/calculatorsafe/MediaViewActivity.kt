@@ -1,35 +1,57 @@
 package com.example.calculatorsafe
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import com.example.calculatorsafe.helpers.DialogHelper
+import java.io.File
 
 class MediaViewActivity : AppCompatActivity() {
+    private lateinit var viewPager: ViewPager2
+    private lateinit var adapter: ImagePagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_media_view)
 
-        val viewPager = findViewById<ViewPager2>(R.id.viewPager)
+        viewPager = findViewById(R.id.viewPager)
         val btnDelete = findViewById<Button>(R.id.btnDelete)
-        val btnShare = findViewById<Button>(R.id.btnShare)
+        val btnRestore = findViewById<Button>(R.id.btnRestore)
 
         val imagePaths = FileManager.getFilePaths()
         Log.e("MediaViewActivity", "Image paths: $imagePaths")
         val startPosition = intent.getIntExtra("position", 0)
-        val adapter = ImagePagerAdapter(imagePaths)
+        adapter = ImagePagerAdapter(imagePaths.toMutableList())
         viewPager.adapter = adapter
         viewPager.setCurrentItem(startPosition, false)
 
         btnDelete.setOnClickListener{
-
+            DialogHelper.showConfirmationDialog(
+                this,
+                "Delete Image",
+                "Are you sure you want to delete this image?",
+                "Delete",
+                "Cancel",
+                { deleteImage()},
+                {})
         }
 
-        btnShare.setOnClickListener {
+        btnRestore.setOnClickListener {
             // Share the current image
             val currentPosition = viewPager.currentItem
+            DialogHelper.showConfirmationDialog(
+                this,
+                "Restore Image",
+                "Restore this image?",
+                "Confirm",
+                "Cancel",
+                {adapter.restoreImage(viewPager.currentItem)},
+                {})
+            //adapter.restoreImage(currentPosition)
             //val bitmap = images[currentPosition]
 
             //val uri = saveBitmapToCache(bitmap)
@@ -39,6 +61,29 @@ class MediaViewActivity : AppCompatActivity() {
           //  }
            // startActivity(Intent.createChooser(shareIntent, "Share image via"))
         }
+    }
 
+    private fun deleteImage() {
+        val position = viewPager.currentItem
+        val deletedImagePath = adapter.deleteFileAt(position)
+
+        if (deletedImagePath != null) {
+            val file = File(deletedImagePath)
+            if (file.exists() && file.delete()) {
+                Toast.makeText(this, "Image deleted", Toast.LENGTH_SHORT).show()
+
+                // Pass the deleted image path back to the previous activity
+                val resultIntent = Intent()
+                resultIntent.putExtra("deletedImagePath", deletedImagePath)
+                setResult(RESULT_OK, resultIntent)
+            } else {
+                Toast.makeText(this, "Failed to delete image", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // If no images are left, finish the activity
+        if (adapter.itemCount == 0) {
+            finish()
+        }
     }
 }
