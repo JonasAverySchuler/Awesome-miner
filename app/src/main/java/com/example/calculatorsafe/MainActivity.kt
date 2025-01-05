@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -93,8 +94,7 @@ class MainActivity : AppCompatActivity() {
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap)
                 } else {
-                    //imageView.setImageResource(R.drawable.baseline_image_24)
-                    //TODO: add placeholder image
+                    imageView.setImageResource(R.drawable.image)
                 }
             },
             onOptionClick = { album ->
@@ -460,7 +460,14 @@ class MainActivity : AppCompatActivity() {
 
             init {
                 view.setOnClickListener {
-                    onAlbumClick(albums[adapterPosition])
+                    val position = adapterPosition
+                    if (position != RecyclerView.NO_POSITION) {
+                        // Safe to use adapterPosition
+                        onAlbumClick(albums[position])
+                    } else {
+                        // Invalid position, log or handle accordingly
+                        Log.e("Error", "Invalid position: $position")
+                    }
                 }
             }
         }

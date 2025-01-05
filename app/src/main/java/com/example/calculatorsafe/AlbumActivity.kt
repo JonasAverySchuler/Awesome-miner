@@ -69,7 +69,7 @@ class AlbumActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = albumName
-        supportActionBar?.subtitle = "${encryptedFiles.size} images" //TODO:count other files types
+        supportActionBar?.subtitle = "${encryptedFiles.size} files" //TODO:count files types
 
         // Calculate and set item width dynamically
         val displayMetrics = resources.displayMetrics
