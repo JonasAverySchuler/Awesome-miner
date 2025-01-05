@@ -78,7 +78,6 @@ class MainActivity : AppCompatActivity() {
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
         albums = getAlbums(this).toMutableList()
 
-        //TODO: add lambda to handle album option click, show a dialog to rename or delete album
         albumAdapter = AlbumAdapter(albums,
             onAlbumClick = { album ->
                 openAlbum(album)

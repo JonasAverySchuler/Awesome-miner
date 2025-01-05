@@ -3,6 +3,7 @@ package com.example.calculatorsafe
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -143,6 +144,9 @@ class AlbumActivity : AppCompatActivity() {
                 true
             }
             R.id.action_restore -> {
+                if (adapter.selectedItems.isNotEmpty()) {
+                    showRestoreConfirmationDialog()
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -170,6 +174,39 @@ class AlbumActivity : AppCompatActivity() {
         positiveButton.setOnClickListener {
             // Proceed with the deletion if the user confirms
             adapter.deleteSelectedFiles()
+            exitSelectionMode()  // Exit selection mode after deletion
+            dialog.dismiss()
+        }
+
+        negativeButton.setOnClickListener {
+            dialog.dismiss()  // Do nothing if the user cancels
+        }
+
+        // Show the dialog
+        dialog.show()
+    }
+
+    private fun showRestoreConfirmationDialog() {
+        // Inflate the custom layout
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
+
+        val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
+        val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
+        val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
+
+        // Set text color or other properties if needed
+        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.black))  // Ensure text color is black
+        messageView.text = "Are you sure you want to restore the selected files?"
+        // Create the AlertDialog
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)  // Use the custom layout
+            .setCancelable(false)
+            .create()
+
+        // Set button listeners
+        positiveButton.setOnClickListener {
+            // Proceed with the deletion if the user confirms
+            adapter.restoreSelectedFiles(this)
             exitSelectionMode()  // Exit selection mode after deletion
             dialog.dismiss()
         }
@@ -377,6 +414,25 @@ class AlbumActivity : AppCompatActivity() {
             }
             selectedItems.clear()  // Clear the selection after deletion
             FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+        }
+
+        fun restoreSelectedFiles(context: Context) {
+            val sortedSelectedItems = selectedItems.sortedDescending()
+            //val selectedFiles = getSelectedItems()
+            for (position in sortedSelectedItems) {
+                val file = encryptedFiles[position]
+                if (file.exists() && EncryptionUtils.restorePhotoToDevice(file, context)) {
+                    // Successfully restored the file
+                    encryptedFiles.removeAt(position)  // Remove from the list
+                    notifyItemRemoved(position)  // Notify the RecyclerView to update
+                } else {
+                    // Handle failure if necessary, e.g., show a message to the user
+                    Log.e("Restore", "Failed to restore file: ${file.name}")
+                }
+            }
+            //EncryptionUtils.restorePhotos(selectedFiles, context)
+            selectedItems.clear()
+            notifyDataSetChanged()
         }
 
         fun clearSelection() {
