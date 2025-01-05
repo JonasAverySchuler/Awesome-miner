@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -323,26 +324,28 @@ class MainActivity : AppCompatActivity() {
     private fun checkAndRequestPermissions() {
         val permissionsNeeded = mutableListOf<String>()
 
-        //API 32 and below you need to request READ_EXTERNAL_STORAGE
-        if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            permissionsNeeded.add(READ_EXTERNAL_STORAGE)
-        }
-
-        if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-            permissionsNeeded.add(READ_MEDIA_IMAGES)
-        }
-
-        if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
-            permissionsNeeded.add(READ_MEDIA_VIDEO)
+        // Check for API level
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {  // Android 13 (API 33) or above
+            // Request media permissions separately
+            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_MEDIA_IMAGES)
+            }
+            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_MEDIA_VIDEO)
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {  // Android 10 (API 29) to Android 12 (API 31)
+            // Request storage permission for reading media
+            if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_EXTERNAL_STORAGE)
+            }
         }
         if (permissionsNeeded.isNotEmpty()) {
-            Log.e(TAG, "Requesting permissions: $permissionsNeeded")
+            Log.d(TAG, "Requesting permissions: $permissionsNeeded")
             ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
         } else {
             // Permissions are already granted
             accessUserImages()
         }
-
     }
 
     // Handle the permissions request result
