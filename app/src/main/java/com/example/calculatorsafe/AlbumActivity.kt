@@ -1,12 +1,15 @@
 package com.example.calculatorsafe
 
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -24,6 +27,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.cardview.widget.CardView
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -130,7 +134,7 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        //TODO: add options for restoring,sorting
+        //TODO: add options sorting
         return when (item.itemId) {
             android.R.id.home -> {
                 finish() // Closes the activity and goes back to the previous one
@@ -162,7 +166,7 @@ class AlbumActivity : AppCompatActivity() {
         val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
 
         // Set text color or other properties if needed
-        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.black))  // Ensure text color is black
+        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))  // Ensure text color is black
 
         // Create the AlertDialog
         val dialog = AlertDialog.Builder(this)
@@ -220,19 +224,26 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestPermissions() {
-        //TODO: add support for selective permissions, test API levels and permissions
         val permissionsNeeded = mutableListOf<String>()
-        //add if below a certain API level to check for different permission names
-        if (!permissionHelper.hasPermission(READ_MEDIA_IMAGES)) {
-            permissionsNeeded.add(READ_MEDIA_IMAGES)
-        }
 
-        if (!permissionHelper.hasPermission(READ_MEDIA_VIDEO)) {
-            permissionsNeeded.add(READ_MEDIA_VIDEO)
+        // Check for API level
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {  // Android 13 (API 33) or above
+            // Request media permissions separately
+            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_MEDIA_IMAGES)
+            }
+            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_MEDIA_VIDEO)
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {  // Android 10 (API 29) to Android 12 (API 31)
+            // Request storage permission for reading media
+            if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_EXTERNAL_STORAGE)
+            }
         }
-
         if (permissionsNeeded.isNotEmpty()) {
-            permissionHelper.requestPermissions(permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
+            Log.d(TAG, "Requesting permissions: $permissionsNeeded")
+            ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
         } else {
             // Permissions are already granted
             accessUserImages()
