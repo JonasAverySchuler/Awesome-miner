@@ -81,12 +81,6 @@ class MainActivity : AppCompatActivity() {
         if (!albumsDir.exists()) {
             albumsDir.mkdirs() // Create albums directory if it doesn't exist
         }
-        // Create the "Main" album inside "Albums" on first run
-        if (PreferenceHelper.isFirstRun(this)) {
-            val mainAlbumDir = File(albumsDir, "Main")
-            mainAlbumDir.mkdir() // Create "Main" album if it doesn't exist
-            PreferenceHelper.setFirstRun(this, false)
-        }
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
         albums = getAlbums(this).toMutableList()
@@ -107,12 +101,18 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
+        // Create the "Main" album inside "Albums" on first run
+        if (PreferenceHelper.isFirstRun(this)) {
+            createAlbum(this, "Main")
+            PreferenceHelper.setFirstRun(this, false)
+        }
+
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            //TODO: change thumbnail if needed
             if (result.resultCode == Activity.RESULT_OK) {
                 val updatedFileCount = result.data?.getIntExtra("updatedFileCount", 0) ?: 0
                 val albumId = result.data?.getStringExtra("albumId") ?: ""
+                Log.e("MainActivity", "Updated file count: $updatedFileCount, albumId: $albumId")
                 if (albumId.isNotEmpty()) {
                     albumAdapter.updateAlbumFileCount(albumId, updatedFileCount)
                 }
@@ -325,6 +325,7 @@ class MainActivity : AppCompatActivity() {
         val albumDir = File(album.pathString)
         albumDir.deleteRecursively()
         albums.remove(album)
+        albumAdapter.deleteAlbum(album)
         albumAdapter.notifyDataSetChanged()
     }
 
@@ -462,7 +463,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updatePhotoCount(album: Album?) {
-        Log.e("MainActivity", "Updating photo count for album: ${album?.name}")
         album?.let {
             // Get the current count of image files in the album directory
             val albumDir = File(getAlbumPath(albumsDir, album.name)) // Get the path of the album
@@ -495,7 +495,7 @@ class MainActivity : AppCompatActivity() {
             init {
                 view.setOnClickListener {
                     val position = adapterPosition
-                    if (position != RecyclerView.NO_POSITION) {
+                    if (position != RecyclerView.NO_POSITION && albums.isNotEmpty()) {
                         // Safe to use adapterPosition
                         onAlbumClick(albums[position])
                     } else {
@@ -544,6 +544,15 @@ class MainActivity : AppCompatActivity() {
                     }
 
                 }
+            }
+        }
+
+        fun deleteAlbum(album: Album) {
+            val position = albums.indexOf(album)
+            if (position != -1) {
+                albums.removeAt(position)
+            } else {
+                Log.e("AlbumAdapter", "Album not found: ${album.name}")
             }
         }
     }
