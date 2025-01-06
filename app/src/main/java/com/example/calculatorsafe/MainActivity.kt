@@ -10,7 +10,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
+import android.os.Environment
+import android.provider.Settings
 import android.text.InputFilter
 import android.util.Log
 import android.view.LayoutInflater
@@ -38,7 +39,9 @@ import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStor
 import com.example.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.utils.FileUtils.generateAlbumId
 import com.example.calculatorsafe.utils.FileUtils.getAlbumPath
+import com.example.calculatorsafe.utils.FileUtils.getFilePathFromUri
 import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
+import com.example.calculatorsafe.utils.StringUtils.isValidAlbumName
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.w3c.dom.Document
@@ -56,6 +59,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var albums: MutableList<Album>
     private var targetAlbum: Album? = null
     private lateinit var albumActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var manageStoragePermissionLauncher: ActivityResultLauncher<Intent>
+    private val REQUEST_CODE_MANAGE_STORAGE = 1003
 
     companion object{
         private val TAG = "MainActivity"
@@ -111,6 +116,18 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        // Register the launcher for the settings intent
+        manageStoragePermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (Environment.isExternalStorageManager()) {
+                // Permission granted, proceed with your file operations
+                Log.d("Permission", "Permission granted")
+            } else {
+                // Permission denied
+                Log.d("Permission", "Permission denied")
+            }
+        }
+
 
         mainRecyclerView.adapter = albumAdapter
 
@@ -275,32 +292,6 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun isValidAlbumName(albumName: String): Boolean {
-        // Check if the album name is not empty
-        if (albumName.isEmpty()) {
-            return false
-        }
-
-        // Set a reasonable character limit (e.g., 50 characters)
-        if (albumName.length > 50) {
-            return false
-        }
-
-        // Disallow multiple spaces in a row
-        if (albumName.contains("  ")) {
-            return false
-        }
-
-        // Check for invalid characters (only letters, numbers, and spaces allowed)
-        val regex = "^[a-zA-Z0-9 ]*$".toRegex()
-        if (!albumName.matches(regex)) {
-            return false
-        }
-
-        return true
-    }
-
-
     private fun createAlbum(context: Context,albumName: String) {
         val albumDir = File(albumsDir, albumName)
         if (!albumDir.exists()) {
@@ -340,7 +331,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkAndRequestPermissions() {
         val permissionsNeeded = mutableListOf<String>()
-
+        //PermissionHelper.checkAllGrantedPermissions(this)
         // Check for API level
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {  // Android 13 (API 33) or above
             // Request media permissions separately
@@ -350,12 +341,11 @@ class MainActivity : AppCompatActivity() {
             if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
                 permissionsNeeded.add(READ_MEDIA_VIDEO)
             }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {  // Android 10 (API 29) to Android 12 (API 31)
+        } else // Android 10 (API 29) to Android 12 (API 31)
             // Request storage permission for reading media
             if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 permissionsNeeded.add(READ_EXTERNAL_STORAGE)
             }
-        }
         if (permissionsNeeded.isNotEmpty()) {
             Log.d(TAG, "Requesting permissions: $permissionsNeeded")
             ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
@@ -382,11 +372,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun accessUserImages() {
-        // Your code to pick images or videos from the gallery
-        val pickMediaIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
-            type = "image/* video/*"
+        // Using ACTION_OPEN_DOCUMENT for better control over file selection
+        val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            type = "image/* video/*" // You can adjust to select specific file types
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true) // Limit to local storage only
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple file selection
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         pickMediaLauncher.launch(pickMediaIntent)
     }
@@ -462,9 +453,23 @@ class MainActivity : AppCompatActivity() {
             // Step 5: Update the Photo Count in the UI
             updatePhotoCount(targetAlbum)
 
-            // Step 6: Delete the Original Image from Storage
-            if (!FileUtils.deleteImageFromUri(this, mediaUri)) {
-                Log.w("MediaHandler", "Failed to delete original media at URI: $mediaUri")
+            Log.d("MediaHandler", "MediaUri: $mediaUri")
+
+            val filePath = getFilePathFromUri(this, mediaUri) ?: ""
+            Log.d("MediaHandler", "File Path from getfilepathfromuri: $filePath")
+
+            // Check if the permission is already granted
+            if (Environment.isExternalStorageManager()) {
+                // Permission granted, proceed with your file operations
+                Log.d("Permission", "Permission granted")
+                if(!FileUtils.deleteFile(filePath)) {
+                    Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
+                }
+            } else {
+                // Permission is not granted, request it by opening the settings
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:$packageName")
+                manageStoragePermissionLauncher.launch(intent)
             }
 
         } catch (e: Exception) {

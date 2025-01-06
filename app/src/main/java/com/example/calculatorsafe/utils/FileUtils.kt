@@ -1,7 +1,9 @@
 package com.example.calculatorsafe.utils
 
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import java.io.File
@@ -53,13 +55,59 @@ object FileUtils {
         return null // Return null if the name cannot be found
     }
 
-    fun deleteImageFromUri(context: Context, mediaUri: Uri): Boolean {
-        Log.e("FileUtils", "Deleting image with URI: $mediaUri")
-        return try {
-            context.contentResolver.delete(mediaUri, null, null) > 0
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FileUtils", "Error deleting image: ${e.message}")
+    fun getFilePathFromUri(context: Context, mediaUri: Uri): String? {
+        var filePath: String? = null
+
+        // Check if URI is a Document URI
+        if (mediaUri.authority == "com.android.providers.media.documents") {
+            val docId = mediaUri.lastPathSegment
+            val split = docId?.split(":")
+            if (split != null && split.size > 1) {
+                val type = split[0]
+                val id = split[1]
+
+                // Query the MediaStore based on the document type and ID
+                val contentUri = when (type) {
+                    "image" -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                    "video" -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                    else -> MediaStore.Files.getContentUri("external")
+                }
+
+                // Build the selection clause and selection args
+                val selection = "${MediaStore.MediaColumns._ID} = ?"
+                val selectionArgs = arrayOf(id)
+
+                // Query MediaStore to get the file path
+                val cursor: Cursor? = context.contentResolver.query(contentUri, arrayOf(MediaStore.MediaColumns.DATA), selection, selectionArgs, null)
+
+                cursor?.let {
+                    if (it.moveToFirst()) {
+                        val columnIndex = it.getColumnIndex(MediaStore.MediaColumns.DATA)
+                        filePath = it.getString(columnIndex)
+                    }
+                    it.close()
+                }
+            }
+        }
+
+        return filePath
+    }
+
+    fun deleteFile(filePath: String): Boolean {
+        val file = File(filePath)
+
+        return if (file.exists() && file.canWrite()) {
+            // Attempt to delete the file
+            val isDeleted = file.delete()
+            if (isDeleted) {
+                Log.d("FileDelete", "File deleted successfully: $filePath")
+                true
+            } else {
+                Log.e("FileDelete", "Failed to delete file: $filePath")
+                false
+            }
+        } else {
+            Log.e("FileDelete", "File does not exist or is not writable: $filePath")
             false
         }
     }

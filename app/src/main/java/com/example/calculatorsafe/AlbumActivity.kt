@@ -27,7 +27,6 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
-import com.example.calculatorsafe.helpers.PermissionHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
@@ -43,7 +42,6 @@ class AlbumActivity : AppCompatActivity() {
     private lateinit var albumDirectoryPath: String
     private lateinit var album: MainActivity.Album
     private lateinit var adapter: EncryptedImageAdapter
-    private lateinit var permissionHelper: PermissionHelper
     private lateinit var selectionModeCallback: OnBackPressedCallback
     private lateinit var toolbar: Toolbar
     private lateinit var mediaViewActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -61,7 +59,6 @@ class AlbumActivity : AppCompatActivity() {
 
         val encryptedFiles = File(albumDirectoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
-        permissionHelper = PermissionHelper(this)
 
         toolbar = findViewById<Toolbar>(R.id.album_toolbar)
         val albumRecyclerView = findViewById<RecyclerView>(R.id.album_RecyclerView)
