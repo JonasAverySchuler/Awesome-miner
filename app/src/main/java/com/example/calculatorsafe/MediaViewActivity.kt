@@ -49,17 +49,8 @@ class MediaViewActivity : AppCompatActivity() {
                 "Restore this image?",
                 "Confirm",
                 "Cancel",
-                {adapter.restoreImage(viewPager.currentItem)},
+                {restoreImage()},
                 {})
-            //adapter.restoreImage(currentPosition)
-            //val bitmap = images[currentPosition]
-
-            //val uri = saveBitmapToCache(bitmap)
-            //val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            //    type = "image/*"
-             //   putExtra(Intent.EXTRA_STREAM, uri)
-          //  }
-           // startActivity(Intent.createChooser(shareIntent, "Share image via"))
         }
     }
 
@@ -71,7 +62,7 @@ class MediaViewActivity : AppCompatActivity() {
             val file = File(deletedImagePath)
             if (file.exists() && file.delete()) {
                 Toast.makeText(this, "Image deleted", Toast.LENGTH_SHORT).show()
-
+                FileManager.setFilePaths(adapter.getFilePaths())
                 // Pass the deleted image path back to the previous activity
                 val resultIntent = Intent()
                 resultIntent.putExtra("deletedImagePath", deletedImagePath)
@@ -85,5 +76,10 @@ class MediaViewActivity : AppCompatActivity() {
         if (adapter.itemCount == 0) {
             finish()
         }
+    }
+
+    private fun restoreImage() {
+        val position = viewPager.currentItem
+
     }
 }

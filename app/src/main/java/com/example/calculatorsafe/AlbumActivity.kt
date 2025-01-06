@@ -22,6 +22,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -50,6 +51,7 @@ class AlbumActivity : AppCompatActivity() {
     private lateinit var permissionHelper: PermissionHelper
     private lateinit var selectionModeCallback: OnBackPressedCallback
     private lateinit var toolbar: Toolbar
+    private lateinit var mediaViewActivityResultLauncher: ActivityResultLauncher<Intent>
 
     companion object {
         private val TAG = "AlbumActivity"
@@ -93,6 +95,9 @@ class AlbumActivity : AppCompatActivity() {
         adapter = EncryptedImageAdapter(
             encryptedFiles.toMutableList(),
             itemWidth,
+            { index ->
+                openMediaViewActivity(index)
+            },
             { file -> EncryptionUtils.decryptImage(file) }
         ) {
             enterSelectionMode()
@@ -110,7 +115,6 @@ class AlbumActivity : AppCompatActivity() {
 
         toolbar.setNavigationOnClickListener {
             if (selectionModeCallback.isEnabled) {
-                Log.e("AlbumActivity", "Back pressed selectioncallback enabled")
                 selectionModeCallback.handleOnBackPressed()
             } else {
                 setResultIntent()
@@ -118,6 +122,19 @@ class AlbumActivity : AppCompatActivity() {
             }
         }
 
+        mediaViewActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                adapter.updateFromFileManager()
+                toolbar.subtitle = "${adapter.itemCount} images"
+            }
+        }
+
+    }
+
+    private fun openMediaViewActivity(index: Int) {
+        val intent = Intent(this, MediaViewActivity::class.java)
+        intent.putExtra("position", index)
+        mediaViewActivityResultLauncher.launch(intent)
     }
 
     private fun setResultIntent() {
@@ -329,6 +346,7 @@ class AlbumActivity : AppCompatActivity() {
     class EncryptedImageAdapter(
         private val encryptedFiles: MutableList<File>,
         private val itemWidth: Int,
+        private val onPhotoClick: (Int) -> Unit,
         private val decryptFunction: (File) -> Bitmap,
         private val onEnterSelectionMode: () -> Unit
         ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
@@ -360,9 +378,7 @@ class AlbumActivity : AppCompatActivity() {
                 itemView.setOnClickListener {
                     when (mode) {
                         Mode.VIEWING -> {
-                            val intent = Intent(itemView.context, MediaViewActivity::class.java)
-                            intent.putExtra("position", position)
-                            itemView.context.startActivity(intent)
+                            onPhotoClick(position)
                         }
                         Mode.SELECTION -> {
                             toggleSelection(position)
@@ -459,8 +475,9 @@ class AlbumActivity : AppCompatActivity() {
             notifyDataSetChanged()
         }
 
-        fun clearSelection() {
-            selectedItems.clear()
+        fun updateFromFileManager() {
+            encryptedFiles.clear()
+            encryptedFiles.addAll(FileManager.getFilePaths().map { File(it) })
             notifyDataSetChanged()
         }
 

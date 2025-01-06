@@ -38,6 +38,10 @@ class ImagePagerAdapter(
 
     override fun getItemCount(): Int = imagePaths.size
 
+    fun getFilePaths(): List<String> {
+        return imagePaths
+    }
+
     fun deleteFileAt(position: Int): String? {
         if (position in imagePaths.indices) {
             val deletedImagePath = imagePaths.removeAt(position)
