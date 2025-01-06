@@ -3,6 +3,7 @@ package com.example.calculatorsafe.utils
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import java.io.File
 import java.net.URLConnection
 import java.util.UUID
@@ -50,6 +51,17 @@ object FileUtils {
             }
         }
         return null // Return null if the name cannot be found
+    }
+
+    fun deleteImageFromUri(context: Context, mediaUri: Uri): Boolean {
+        Log.e("FileUtils", "Deleting image with URI: $mediaUri")
+        return try {
+            context.contentResolver.delete(mediaUri, null, null) > 0
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("FileUtils", "Error deleting image: ${e.message}")
+            false
+        }
     }
 
     fun generateAlbumId(): String {

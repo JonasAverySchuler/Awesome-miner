@@ -106,7 +106,6 @@ class MainActivity : AppCompatActivity() {
             if (result.resultCode == Activity.RESULT_OK) {
                 val updatedFileCount = result.data?.getIntExtra("updatedFileCount", 0) ?: 0
                 val albumId = result.data?.getStringExtra("albumId") ?: ""
-                Log.e("MainActivity", "Updated file count: $updatedFileCount, albumId: $albumId")
                 if (albumId.isNotEmpty()) {
                     albumAdapter.updateAlbumFileCount(albumId, updatedFileCount)
                 }
@@ -386,6 +385,7 @@ class MainActivity : AppCompatActivity() {
         // Your code to pick images or videos from the gallery
         val pickMediaIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
             type = "image/* video/*"
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         pickMediaLauncher.launch(pickMediaIntent)
@@ -445,15 +445,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleSelectedMedia(mediaUri: Uri) {
-        val bitmap = getBitmapFromUri(contentResolver, mediaUri)
-        val encryptedImage = EncryptionUtils.encryptImage(bitmap)
+        try {
+            // Step 1: Get Bitmap from URI
+            val bitmap = getBitmapFromUri(contentResolver, mediaUri)
 
-        val originalFileName = FileUtils.getFileNameFromUri(this, mediaUri) ?: "unknown"
-        val mimeType = contentResolver.getType(mediaUri) ?: "unknown"
+            // Step 2: Encrypt the Image
+            val encryptedImage = EncryptionUtils.encryptImage(bitmap)
 
-        saveEncryptedImageToStorage(encryptedImage,albumsDir, targetAlbum, originalFileName, mimeType)
-        updatePhotoCount(targetAlbum)
-        //deleteImageFromUri(mediaUri)
+            // Step 3: Retrieve File Name and MIME Type
+            val originalFileName = FileUtils.getFileNameFromUri(this, mediaUri) ?: "unknown_${System.currentTimeMillis()}.jpg"
+            val mimeType = contentResolver.getType(mediaUri) ?: "image/jpeg"
+
+            // Step 4: Save the Encrypted Image
+            saveEncryptedImageToStorage(encryptedImage, albumsDir, targetAlbum, originalFileName, mimeType)
+
+            // Step 5: Update the Photo Count in the UI
+            updatePhotoCount(targetAlbum)
+
+            // Step 6: Delete the Original Image from Storage
+            if (!FileUtils.deleteImageFromUri(this, mediaUri)) {
+                Log.w("MediaHandler", "Failed to delete original media at URI: $mediaUri")
+            }
+
+        } catch (e: Exception) {
+            Log.e("MediaHandler", "Error handling selected media: ${e.message}", e)
+            // Optionally show an error message to the user
+            Toast.makeText(this, "Failed to process the selected media.", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updatePhotoCount(album: Album?) {

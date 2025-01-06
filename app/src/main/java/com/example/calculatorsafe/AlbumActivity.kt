@@ -335,6 +335,5 @@ class AlbumActivity : AppCompatActivity() {
         }
         toolbar.title = album.name
         toolbar.subtitle = "${adapter.itemCount} images"
-        // Hide toolbar or action bar
     }
 }
