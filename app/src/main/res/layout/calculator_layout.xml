@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="@color/darker_gray">
+    android:clipToPadding="false"
+    android:background="@color/calc_display_background_gray">
 
     <!-- Horizontal Guidelines -->
     <androidx.constraintlayout.widget.Guideline
@@ -71,6 +72,18 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.75" />
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+
+        app:layout_constraintTop_toBottomOf="@id/guide_row1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginStart="-16dp"
+        android:layout_marginEnd="-16dp"
+        android:layout_marginBottom="-16dp"
+        android:background="@color/calc_buttons_background_gray"
+        />
+
     <!-- Display -->
     <TextView
         android:id="@+id/display"
@@ -88,34 +101,48 @@
         android:textColor="@color/white"/>
 
     <!-- Buttons -->
-    <Button
+    <ImageButton
         android:id="@+id/btnRoot"
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
         android:text="X^"
+        android:contentDescription="x^"
+        android:src="@drawable/superscript_solid"
+        android:scaleType="fitCenter"
+        android:padding="30dp"
+
         app:layout_constraintTop_toTopOf="@id/guide_row1"
         app:layout_constraintBottom_toTopOf="@id/guide_row2"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="@id/guide_col1" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnPercent"
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
         android:text="%"
+        android:contentDescription="%"
+        android:src="@drawable/percent_solid"
+        android:scaleType="fitCenter"
+        android:padding="30dp"
+
         app:layout_constraintTop_toTopOf="@id/guide_row1"
         app:layout_constraintBottom_toTopOf="@id/guide_row2"
         app:layout_constraintStart_toStartOf="@id/guide_col1"
         app:layout_constraintEnd_toEndOf="@id/guide_col2" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnDiv"
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
+        android:src="@drawable/divide_solid"
+        android:scaleType="fitCenter"
+        android:padding="30dp"
         android:text="/"
+        android:contentDescription="/"
         app:layout_constraintTop_toTopOf="@id/guide_row1"
         app:layout_constraintBottom_toTopOf="@id/guide_row2"
         app:layout_constraintStart_toStartOf="@id/guide_col2"
@@ -125,7 +152,7 @@
         android:id="@+id/btn7"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="7"
         app:layout_constraintTop_toTopOf="@id/guide_row2"
         app:layout_constraintBottom_toTopOf="@id/guide_row3"
@@ -136,7 +163,7 @@
         android:id="@+id/btn8"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="8"
         app:layout_constraintTop_toTopOf="@id/guide_row2"
         app:layout_constraintBottom_toTopOf="@id/guide_row3"
@@ -147,41 +174,54 @@
         android:id="@+id/btn9"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="9"
         app:layout_constraintTop_toTopOf="@id/guide_row2"
         app:layout_constraintBottom_toTopOf="@id/guide_row3"
         app:layout_constraintStart_toStartOf="@id/guide_col2"
         app:layout_constraintEnd_toStartOf="@id/guide_col3" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnTimes"
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
         android:text="X"
+        android:src="@drawable/xmark_solid"
+        android:scaleType="fitCenter"
+        android:padding="30dp"
+        android:contentDescription="x"
         app:layout_constraintTop_toTopOf="@id/guide_row1"
         app:layout_constraintBottom_toTopOf="@id/guide_row2"
         app:layout_constraintStart_toStartOf="@id/guide_col3"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnMinus"
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
+        android:src="@drawable/minus_solid"
+        android:scaleType="fitCenter"
+        android:padding="30dp"
         android:text="-"
+        android:contentDescription="-"
         app:layout_constraintTop_toTopOf="@id/guide_row2"
         app:layout_constraintBottom_toTopOf="@id/guide_row3"
         app:layout_constraintStart_toStartOf="@id/guide_col3"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
+    <ImageButton
         android:id="@+id/btnPlus"
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
+        android:src="@drawable/plus_solid"
+
+        android:scaleType="fitCenter"
+        android:padding="30dp"
         android:text="+"
+        android:contentDescription="+"
         app:layout_constraintTop_toTopOf="@id/guide_row3"
         app:layout_constraintBottom_toTopOf="@id/guide_row4"
         app:layout_constraintStart_toStartOf="@id/guide_col3"
@@ -191,7 +231,7 @@
         android:id="@+id/btn4"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="4"
         app:layout_constraintTop_toTopOf="@id/guide_row3"
         app:layout_constraintBottom_toTopOf="@id/guide_row4"
@@ -202,7 +242,7 @@
         android:id="@+id/btn5"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="5"
         app:layout_constraintTop_toTopOf="@id/guide_row3"
         app:layout_constraintBottom_toTopOf="@id/guide_row4"
@@ -213,7 +253,7 @@
         android:id="@+id/btn6"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="6"
         app:layout_constraintTop_toTopOf="@id/guide_row3"
         app:layout_constraintBottom_toTopOf="@id/guide_row4"
@@ -224,7 +264,7 @@
         android:id="@+id/btn3"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="3"
         app:layout_constraintTop_toTopOf="@id/guide_row4"
         app:layout_constraintBottom_toTopOf="@id/guide_row5"
@@ -235,7 +275,7 @@
         android:id="@+id/btnClear"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="CLR"
         app:layout_constraintTop_toTopOf="@id/guide_row5"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -246,7 +286,7 @@
         android:id="@+id/btn1"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="1"
         app:layout_constraintTop_toTopOf="@id/guide_row4"
         app:layout_constraintBottom_toTopOf="@id/guide_row5"
@@ -257,7 +297,7 @@
         android:id="@+id/btn2"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="2"
         app:layout_constraintTop_toTopOf="@id/guide_row4"
         app:layout_constraintBottom_toTopOf="@id/guide_row5"
@@ -268,7 +308,7 @@
         android:id="@+id/btnPoint"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="."
         app:layout_constraintTop_toTopOf="@id/guide_row5"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -279,7 +319,7 @@
         android:id="@+id/btn0"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorNumberButtonStyle"
         android:text="0"
         app:layout_constraintTop_toTopOf="@id/guide_row5"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -287,12 +327,15 @@
         app:layout_constraintEnd_toStartOf="@id/guide_col2" />
 
     <!-- Equals Button -->
-    <Button
+    <ImageButton
         android:id="@+id/btnEquals"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:text="="
         style="@style/CalculatorEqualsButtonStyle"
+        android:src="@drawable/equals"
+        android:scaleType="fitCenter"
+        android:contentDescription="="
+        android:padding="25dp"
 
         app:layout_constraintTop_toTopOf="@id/guide_row4"
         app:layout_constraintBottom_toBottomOf="parent"

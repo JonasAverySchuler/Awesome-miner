@@ -3,7 +3,9 @@ package com.example.calculatorsafe.activities
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.example.calculatorsafe.R
@@ -25,11 +27,22 @@ class CalculatorActivity : AppCompatActivity() {
             R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
             R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9,
             R.id.btnPlus, R.id.btnMinus, R.id.btnTimes, R.id.btnDiv,
-            R.id.btnEquals, R.id.btnClear
+            R.id.btnEquals, R.id.btnClear,
+           // R.id.btnImagePlus, R.id.btnImageMinus // Add ImageButton IDs here
         )
 
         buttons.forEach { id ->
-            findViewById<Button>(id).setOnClickListener { onButtonClick(it as Button) }
+            val view = findViewById<View>(id)
+            when (view) {
+                is Button -> {
+                    // For regular Buttons
+                    view.setOnClickListener { onButtonClick(view) }
+                }
+                is ImageButton -> {
+                    // For ImageButtons
+                    view.setOnClickListener { onButtonClick(view) }
+                }
+            }
         }
     }
 
@@ -40,15 +53,24 @@ class CalculatorActivity : AppCompatActivity() {
         displayTextView.text = "0"
     }
 
-    private fun onButtonClick(button: Button) {
-        when (button.id) {
+    private fun onButtonClick(view: View) {
+        when (view.id) {
             R.id.btnClear -> clearInput()
             R.id.btnEquals -> calculateResult()
-            else -> handleInput(button.text.toString())
+            else -> handleInput(view)
         }
     }
 
-    private fun handleInput(input: String) {
+    private fun handleInput(view: View) {
+        val input = when (view) {
+            is Button -> view.text.toString()
+            is ImageButton -> {
+                // You can use the content description or some other way to identify the operation
+                view.contentDescription.toString()
+            }
+            else -> return
+        }
+
         Log.e("CalculatorActivity", "Handling input: $input")
         if (input in "0123456789") {
             currentInput += input
@@ -61,6 +83,7 @@ class CalculatorActivity : AppCompatActivity() {
     }
 
     private fun calculateResult() {
+        //TODO: if is the password go to vault
         val operand2 = currentInput.toDoubleOrNull()
         if (operand1 != null && operand2 != null && operator != null) {
             val result = when (operator) {
