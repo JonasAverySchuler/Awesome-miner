@@ -10,7 +10,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
-import com.example.calculatorsafe.MainActivity.Album
+import com.example.calculatorsafe.data.Album
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream

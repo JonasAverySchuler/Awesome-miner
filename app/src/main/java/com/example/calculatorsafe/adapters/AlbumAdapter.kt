@@ -11,9 +11,9 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.MainActivity.Album
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
+import com.example.calculatorsafe.data.Album
 
 class AlbumAdapter(
     private val albums: MutableList<Album>,
@@ -31,12 +31,13 @@ class AlbumAdapter(
         init {
             view.setOnClickListener {
                 val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION && albums.isNotEmpty()) {
+                if (position != RecyclerView.NO_POSITION && albums.isNotEmpty() && position != albums.size) {
                     // Safe to use adapterPosition
                     onAlbumClick(albums[position])
                 } else {
                     // Invalid position, log or handle accordingly
                     Log.e("Error", "Invalid position: $position")
+                    notifyDataSetChanged()
                 }
             }
         }
@@ -62,9 +63,17 @@ class AlbumAdapter(
     override fun getItemCount(): Int = albums.size
 
     fun addAlbum(album: Album) {
-        albums.add(album)
-        notifyItemInserted(albums.size - 1)
+        Log.e("AlbumAdapter", "Adding album: ${album}")
+        Log.e("AlbumAdapter", "Albums: ${albums}")
+        // Check if album already exists
+        if (!albums.contains(album)) {
+            albums.add(album)
+            notifyItemInserted(albums.size - 1)
+        } else {
+            Log.e("AlbumAdapter", "Album already exists: ${album.name}")
+        }
     }
+
 
     fun updateAlbumFileCount(albumId: String, updatedFileCount: Int) {
         val album = albums.find { it.albumID == albumId }
@@ -85,10 +94,18 @@ class AlbumAdapter(
 
     fun deleteAlbum(album: Album) {
         val position = albums.indexOf(album)
+        Log.e("AlbumAdapter", "Deleting album: ${album.name}, position: $position")
         if (position != -1) {
             albums.removeAt(position)
+            notifyItemRemoved(position)
+
+            // Check if the list is empty and notify the adapter
+            if (albums.isEmpty()) {
+                notifyDataSetChanged()  // Optional, but it can help ensure RecyclerView knows the list is empty
+            }
         } else {
             Log.e("AlbumAdapter", "Album not found: ${album.name}")
         }
     }
+
 }

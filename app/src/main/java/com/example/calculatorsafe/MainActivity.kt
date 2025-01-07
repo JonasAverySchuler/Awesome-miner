@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.adapters.AlbumAdapter
+import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
@@ -54,7 +55,6 @@ class MainActivity : AppCompatActivity() {
     private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumsDir: File
     private lateinit var albumAdapter: AlbumAdapter
-    private lateinit var albums: MutableList<Album>
     private var targetAlbum: Album? = null
     private lateinit var albumActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var manageStoragePermissionLauncher: ActivityResultLauncher<Intent>
@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         mainRecyclerView.layoutManager = LinearLayoutManager(this)
-        albums = getAlbums(this).toMutableList()
+        val albums = getAlbums(this).toMutableList()
 
         albumAdapter = AlbumAdapter(albums,
             onAlbumClick = { album ->
@@ -268,7 +268,6 @@ class MainActivity : AppCompatActivity() {
             val albumId = generateAlbumId()
             saveAlbumMetadata(context, albumName, albumId)
             val newAlbum = Album(albumName, 0, albumId, albumDir.absolutePath)
-            albums.add(newAlbum)
             albumAdapter.addAlbum(newAlbum)
         }
     }
@@ -277,7 +276,6 @@ class MainActivity : AppCompatActivity() {
         //TODO: error check this
         val albumDir = File(album.pathString)
         albumDir.deleteRecursively()
-        albums.remove(album)
         albumAdapter.deleteAlbum(album)
     }
 
@@ -289,7 +287,7 @@ class MainActivity : AppCompatActivity() {
         prefs.edit().remove(oldAlbumName).apply()
     }
 
-    fun getAlbums(context: Context): List<Album> {
+    private fun getAlbums(context: Context): List<Album> {
         val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return emptyList()
         return albumDirs.map { dir ->
             val photoCount = (getImageFileCountFromAlbum(dir))
@@ -456,13 +454,11 @@ class MainActivity : AppCompatActivity() {
             it.photoCount = imageCount
 
             // Find the album in the list and notify adapter of the change
-            val index = albums.indexOfFirst { it.albumID == album.albumID }
-            if (index != -1) {
-                albums[index] = it // Update the album in the list
-                albumAdapter.notifyItemChanged(index) // Notify the adapter to refresh the item
-            }
+            //val index = albums.indexOfFirst { it.albumID == album.albumID }
+            //if (index != -1) {
+             //   albums[index] = it // Update the album in the list
+               // albumAdapter.notifyItemChanged(index) // Notify the adapter to refresh the item
+           // }
         }
     }
-
-    data class Album(val name: String, var photoCount: Int, val albumID: String, val pathString: String = "")
 }

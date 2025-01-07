@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
+import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
@@ -37,7 +38,7 @@ class AlbumActivity : AppCompatActivity() {
 
     private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumDirectoryPath: String
-    private lateinit var album: MainActivity.Album
+    private lateinit var album: Album
     private lateinit var adapter: EncryptedImageAdapter
     private lateinit var selectionModeCallback: OnBackPressedCallback
     private lateinit var toolbar: Toolbar
@@ -52,7 +53,7 @@ class AlbumActivity : AppCompatActivity() {
         setContentView(R.layout.activity_album)
         val albumName = intent.getStringExtra("albumName") ?: ""
         albumDirectoryPath = intent.getStringExtra("albumDirectoryPath") ?: ""
-        album = MainActivity.Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
+        album = Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
 
         val encryptedFiles = File(albumDirectoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
