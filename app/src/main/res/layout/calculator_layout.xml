@@ -141,7 +141,6 @@
         android:src="@drawable/divide_solid"
         android:scaleType="fitCenter"
         android:padding="30dp"
-        android:text="/"
         android:contentDescription="/"
         app:layout_constraintTop_toTopOf="@id/guide_row1"
         app:layout_constraintBottom_toTopOf="@id/guide_row2"
@@ -186,11 +185,11 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         style="@style/CalculatorButtonStyle"
-        android:text="X"
         android:src="@drawable/xmark_solid"
         android:scaleType="fitCenter"
         android:padding="30dp"
-        android:contentDescription="x"
+
+        android:contentDescription="*"
         app:layout_constraintTop_toTopOf="@id/guide_row1"
         app:layout_constraintBottom_toTopOf="@id/guide_row2"
         app:layout_constraintStart_toStartOf="@id/guide_col3"
@@ -204,7 +203,7 @@
         android:src="@drawable/minus_solid"
         android:scaleType="fitCenter"
         android:padding="30dp"
-        android:text="-"
+
         android:contentDescription="-"
         app:layout_constraintTop_toTopOf="@id/guide_row2"
         app:layout_constraintBottom_toTopOf="@id/guide_row3"
@@ -220,7 +219,6 @@
 
         android:scaleType="fitCenter"
         android:padding="30dp"
-        android:text="+"
         android:contentDescription="+"
         app:layout_constraintTop_toTopOf="@id/guide_row3"
         app:layout_constraintBottom_toTopOf="@id/guide_row4"

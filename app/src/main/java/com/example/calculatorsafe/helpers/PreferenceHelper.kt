@@ -26,6 +26,11 @@ object PreferenceHelper {
         setPasscodeSet(context, true)
     }
 
+    fun getPasscode(context: Context): String? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(PREF_PASSCODE,null)
+    }
+
     fun saveAlbumMetadata(context: Context, albumName: String, albumId: String) {
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         prefs.edit().putString(albumName, albumId).apply()
