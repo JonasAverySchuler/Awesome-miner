@@ -11,15 +11,11 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
@@ -27,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
+import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
@@ -153,84 +150,26 @@ class AlbumActivity : AppCompatActivity() {
             R.id.action_delete -> {
                 // Handle delete action
                 if (adapter.selectedItems.isNotEmpty()) {
-                    showDeleteConfirmationDialog()
+                    DialogHelper.showConfirmationDialog(this, "Delete Album",
+                        "Are you sure you want to delete this album and its contents?","Confirm", "Cancel",
+                        { adapter.deleteSelectedFiles()
+                            exitSelectionMode()},
+                        {})
                 }
                 true
             }
             R.id.action_restore -> {
                 if (adapter.selectedItems.isNotEmpty()) {
-                    showRestoreConfirmationDialog()
+                    DialogHelper.showConfirmationDialog(this, "Restore Album",
+                        "Are you sure you want to restore the selected files?","Confirm", "Cancel",
+                        { adapter.restoreSelectedFiles(this)
+                            exitSelectionMode()  // Exit selection mode after deletion},
+                        })
                 }
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private fun showDeleteConfirmationDialog() {
-        // Inflate the custom layout
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
-
-        val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
-        val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
-        val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
-
-        // Set text color or other properties if needed
-        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))  // Ensure text color is black
-
-        // Create the AlertDialog
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)  // Use the custom layout
-            .setCancelable(false)
-            .create()
-
-        // Set button listeners
-        positiveButton.setOnClickListener {
-            // Proceed with the deletion if the user confirms
-            adapter.deleteSelectedFiles()
-            exitSelectionMode()  // Exit selection mode after deletion
-            dialog.dismiss()
-        }
-
-        negativeButton.setOnClickListener {
-            dialog.dismiss()  // Do nothing if the user cancels
-        }
-
-        // Show the dialog
-        dialog.show()
-    }
-
-    private fun showRestoreConfirmationDialog() {
-        // Inflate the custom layout
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
-
-        val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
-        val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
-        val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
-
-        // Set text color or other properties if needed
-        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.black))  // Ensure text color is black
-        messageView.text = "Are you sure you want to restore the selected files?"
-        // Create the AlertDialog
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)  // Use the custom layout
-            .setCancelable(false)
-            .create()
-
-        // Set button listeners
-        positiveButton.setOnClickListener {
-            // Proceed with the deletion if the user confirms
-            adapter.restoreSelectedFiles(this)
-            exitSelectionMode()  // Exit selection mode after deletion
-            dialog.dismiss()
-        }
-
-        negativeButton.setOnClickListener {
-            dialog.dismiss()  // Do nothing if the user cancels
-        }
-
-        // Show the dialog
-        dialog.show()
     }
 
     private fun checkAndRequestPermissions() {

@@ -269,6 +269,7 @@ class MainActivity : AppCompatActivity() {
             val albumId = generateAlbumId()
             saveAlbumMetadata(context, albumName, albumId)
             val newAlbum = Album(albumName, 0, albumId, albumDir.absolutePath)
+            albums.add(newAlbum)
             albumAdapter.addAlbum(newAlbum)
         }
     }
