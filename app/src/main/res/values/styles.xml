@@ -9,7 +9,7 @@
     </style>
 
     <style name="defaultToolbarTheme" parent="Theme.MaterialComponents.NoActionBar">
-        <item name="popupMenuBackground">@drawable/item_background_menu</item>
+        <item name="popupMenuBackground">@color/calc_button_blue</item>
     </style>
 
     <style name="OverflowMenuStyle" parent="Widget.MaterialComponents.PopupMenu.Overflow">
