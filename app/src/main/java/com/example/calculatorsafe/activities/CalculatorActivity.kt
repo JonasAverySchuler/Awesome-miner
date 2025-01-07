@@ -2,6 +2,7 @@ package com.example.calculatorsafe.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -23,7 +24,7 @@ class CalculatorActivity : AppCompatActivity() {
         val buttons = listOf(
             R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
             R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9,
-            R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide,
+            R.id.btnPlus, R.id.btnMinus, R.id.btnTimes, R.id.btnDiv,
             R.id.btnEquals, R.id.btnClear
         )
 
@@ -48,6 +49,7 @@ class CalculatorActivity : AppCompatActivity() {
     }
 
     private fun handleInput(input: String) {
+        Log.e("CalculatorActivity", "Handling input: $input")
         if (input in "0123456789") {
             currentInput += input
             displayTextView.text = currentInput

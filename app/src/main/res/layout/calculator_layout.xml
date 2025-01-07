@@ -1,239 +1,280 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp">
 
-    <!-- Calculator Display -->
+    <!-- Horizontal Guidelines -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.15" />
 
-    <!-- Row 1 -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_row1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.3" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_row2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.45" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_row3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.6" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_row4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.75" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_row5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.88372093" />
+
+    <!-- Vertical Guidelines -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_col1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.25" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_col2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_col3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.75" />
+
+    <!-- Display -->
     <TextView
         android:id="@+id/display"
-        android:layout_width="391dp"
-        android:layout_height="218dp"
-        android:layout_marginBottom="32dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:text="0"
-        android:textAlignment="center"
         android:textSize="32sp"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btnX"
-        android:layout_width="88dp"
-        android:layout_height="80dp"
-        android:text="X"
-
-        app:layout_constraintBottom_toTopOf="@id/btn7"
-        app:layout_constraintEnd_toStartOf="@id/btn0"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:gravity="center|bottom"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/guide_row1"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/display" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Buttons -->
     <Button
-        android:id="@+id/btnSquare"
-        android:layout_width="80dp"
-        android:layout_height="79dp"
-        android:text="x"
-
-        app:layout_constraintBottom_toTopOf="@id/btn8"
-        app:layout_constraintEnd_toStartOf="@id/btnPercent"
-        app:layout_constraintStart_toEndOf="@id/btnX"
-        app:layout_constraintTop_toBottomOf="@id/display" />
+        android:id="@+id/btnRoot"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="X^"
+        app:layout_constraintTop_toTopOf="@id/guide_row1"
+        app:layout_constraintBottom_toTopOf="@id/guide_row2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/guide_col1" />
 
     <Button
         android:id="@+id/btnPercent"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="%"
-
-        app:layout_constraintBottom_toTopOf="@id/btn9"
-        app:layout_constraintEnd_toStartOf="@id/btnDiv"
-        app:layout_constraintStart_toEndOf="@id/btnSquare"
-        app:layout_constraintTop_toBottomOf="@id/display" />
+        app:layout_constraintTop_toTopOf="@id/guide_row1"
+        app:layout_constraintBottom_toTopOf="@id/guide_row2"
+        app:layout_constraintStart_toStartOf="@id/guide_col1"
+        app:layout_constraintEnd_toEndOf="@id/guide_col2" />
 
     <Button
         android:id="@+id/btnDiv"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="/"
-
-        app:layout_constraintBottom_toTopOf="@id/btnTimes"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnPercent"
-        app:layout_constraintTop_toBottomOf="@id/display" />
-
-    <!-- Row 2 -->
+        app:layout_constraintTop_toTopOf="@id/guide_row1"
+        app:layout_constraintBottom_toTopOf="@id/guide_row2"
+        app:layout_constraintStart_toStartOf="@id/guide_col2"
+        app:layout_constraintEnd_toEndOf="@id/guide_col3" />
 
     <Button
         android:id="@+id/btn7"
-        android:layout_width="93dp"
-        android:layout_height="111dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:text="7"
-
-        app:layout_constraintBottom_toTopOf="@id/btn4"
-        app:layout_constraintEnd_toStartOf="@id/btn8"
+        app:layout_constraintTop_toTopOf="@id/guide_row2"
+        app:layout_constraintBottom_toTopOf="@id/guide_row3"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnX" />
+        app:layout_constraintEnd_toStartOf="@id/guide_col1" />
 
     <Button
         android:id="@+id/btn8"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="8"
-
-        app:layout_constraintBottom_toTopOf="@id/btn5"
-        app:layout_constraintEnd_toStartOf="@id/btn9"
-        app:layout_constraintStart_toEndOf="@id/btn7"
-        app:layout_constraintTop_toBottomOf="@id/btnSquare" />
+        app:layout_constraintTop_toTopOf="@id/guide_row2"
+        app:layout_constraintBottom_toTopOf="@id/guide_row3"
+        app:layout_constraintStart_toStartOf="@id/guide_col1"
+        app:layout_constraintEnd_toStartOf="@id/guide_col2" />
 
     <Button
         android:id="@+id/btn9"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="9"
-
-        app:layout_constraintBottom_toTopOf="@id/btn6"
-        app:layout_constraintEnd_toStartOf="@id/btnTimes"
-        app:layout_constraintStart_toEndOf="@id/btn8"
-        app:layout_constraintTop_toBottomOf="@id/btnPercent" />
+        app:layout_constraintTop_toTopOf="@id/guide_row2"
+        app:layout_constraintBottom_toTopOf="@id/guide_row3"
+        app:layout_constraintStart_toStartOf="@id/guide_col2"
+        app:layout_constraintEnd_toStartOf="@id/guide_col3" />
 
     <Button
         android:id="@+id/btnTimes"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="X"
-
-        app:layout_constraintBottom_toTopOf="@id/btnPlus"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btn9"
-        app:layout_constraintTop_toBottomOf="@id/btnDiv" />
-
-    <!-- Row 3 -->
-    <Button
-        android:id="@+id/btn4"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="4"
-
-        app:layout_constraintBottom_toTopOf="@id/btn1"
-        app:layout_constraintEnd_toStartOf="@id/btn5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn7" />
+        app:layout_constraintTop_toTopOf="@id/guide_row1"
+        app:layout_constraintBottom_toTopOf="@id/guide_row2"
+        app:layout_constraintStart_toStartOf="@id/guide_col3"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
-        android:id="@+id/btn5"
+        android:id="@+id/btnMinus"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:text="5"
-
-        app:layout_constraintBottom_toTopOf="@id/btn2"
-        app:layout_constraintEnd_toStartOf="@id/btn6"
-        app:layout_constraintStart_toEndOf="@id/btn4"
-        app:layout_constraintTop_toBottomOf="@id/btn8" />
-
-    <Button
-        android:id="@+id/btn6"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="6"
-
-        app:layout_constraintBottom_toTopOf="@id/btn3"
-        app:layout_constraintEnd_toStartOf="@id/btnPlus"
-        app:layout_constraintStart_toEndOf="@id/btn5"
-        app:layout_constraintTop_toBottomOf="@id/btn9" />
+        android:text="-"
+        app:layout_constraintTop_toTopOf="@id/guide_row2"
+        app:layout_constraintBottom_toTopOf="@id/guide_row3"
+        app:layout_constraintStart_toStartOf="@id/guide_col3"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <Button
         android:id="@+id/btnPlus"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="+"
+        app:layout_constraintTop_toTopOf="@id/guide_row3"
+        app:layout_constraintBottom_toTopOf="@id/guide_row4"
+        app:layout_constraintStart_toStartOf="@id/guide_col3"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-        app:layout_constraintBottom_toTopOf="@id/btnEqual"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btn6"
-        app:layout_constraintTop_toBottomOf="@id/btnTimes" />
+    <Button
+        android:id="@+id/btn4"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="4"
+        app:layout_constraintTop_toTopOf="@id/guide_row3"
+        app:layout_constraintBottom_toTopOf="@id/guide_row4"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/guide_col1" />
 
-    <!-- Row 4 -->
+    <Button
+        android:id="@+id/btn5"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="5"
+        app:layout_constraintTop_toTopOf="@id/guide_row3"
+        app:layout_constraintBottom_toTopOf="@id/guide_row4"
+        app:layout_constraintStart_toStartOf="@id/guide_col1"
+        app:layout_constraintEnd_toStartOf="@id/guide_col2" />
+
+    <Button
+        android:id="@+id/btn6"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="6"
+        app:layout_constraintTop_toTopOf="@id/guide_row3"
+        app:layout_constraintBottom_toTopOf="@id/guide_row4"
+        app:layout_constraintStart_toStartOf="@id/guide_col2"
+        app:layout_constraintEnd_toStartOf="@id/guide_col3" />
+
+    <Button
+        android:id="@+id/btn3"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="3"
+        app:layout_constraintTop_toTopOf="@id/guide_row4"
+        app:layout_constraintBottom_toTopOf="@id/guide_row5"
+        app:layout_constraintStart_toStartOf="@id/guide_col2"
+        app:layout_constraintEnd_toStartOf="@id/guide_col3" />
+
+    <Button
+        android:id="@+id/btnClear"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="CLR"
+        app:layout_constraintTop_toTopOf="@id/guide_row5"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/guide_col2"
+        app:layout_constraintEnd_toStartOf="@id/guide_col3" />
+
     <Button
         android:id="@+id/btn1"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="1"
-
-        app:layout_constraintBottom_toTopOf="@id/btnPoint"
-        app:layout_constraintEnd_toStartOf="@id/btn2"
+        app:layout_constraintTop_toTopOf="@id/guide_row4"
+        app:layout_constraintBottom_toTopOf="@id/guide_row5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn4" />
+        app:layout_constraintEnd_toStartOf="@id/guide_col1" />
 
     <Button
         android:id="@+id/btn2"
-        android:layout_width="92dp"
-        android:layout_height="107dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:text="2"
+        app:layout_constraintTop_toTopOf="@id/guide_row4"
+        app:layout_constraintBottom_toTopOf="@id/guide_row5"
+        app:layout_constraintStart_toStartOf="@id/guide_col1"
+        app:layout_constraintEnd_toStartOf="@id/guide_col2" />
 
-        app:layout_constraintBottom_toTopOf="@id/btn0"
-        app:layout_constraintEnd_toStartOf="@id/btn3"
-        app:layout_constraintStart_toEndOf="@id/btn1"
-        app:layout_constraintTop_toBottomOf="@id/btn5" />
-
-    <Button
-        android:id="@+id/btn3"
-        android:layout_width="95dp"
-        android:layout_height="103dp"
-        android:text="3"
-
-        app:layout_constraintBottom_toTopOf="@id/btnDelete"
-        app:layout_constraintEnd_toStartOf="@id/btnEqual"
-        app:layout_constraintStart_toEndOf="@id/btn2"
-        app:layout_constraintTop_toBottomOf="@id/btn6" />
-
-    <!-- Row 5 -->
     <Button
         android:id="@+id/btnPoint"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="."
-
+        app:layout_constraintTop_toTopOf="@id/guide_row5"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btn0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn1" />
+        app:layout_constraintEnd_toStartOf="@id/guide_col1" />
 
     <Button
         android:id="@+id/btn0"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="0"
-
-        app:layout_constraintEnd_toStartOf="@id/btnDelete"
-        app:layout_constraintStart_toEndOf="@id/btnPoint"
-        app:layout_constraintTop_toTopOf="@+id/btnPoint"
-        app:layout_constraintBottom_toBottomOf="parent"/>
-
-    <Button
-        android:id="@+id/btnDelete"
-        android:layout_width="96dp"
-        android:layout_height="100dp"
-        android:text="DEL"
-
-        app:layout_constraintEnd_toStartOf="@id/btnEqual"
-        app:layout_constraintStart_toEndOf="@id/btn0"
-        app:layout_constraintTop_toTopOf="@+id/btn0" />
-
-    <Button
-        android:id="@+id/btnEqual"
-        android:layout_width="95dp"
-        android:layout_height="204dp"
-        android:text="="
-
+        app:layout_constraintTop_toTopOf="@id/guide_row5"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/guide_col1"
+        app:layout_constraintEnd_toStartOf="@id/guide_col2" />
+
+    <!-- Equals Button -->
+    <Button
+        android:id="@+id/btnEquals"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:text="="
+        app:layout_constraintTop_toTopOf="@id/guide_row4"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/guide_col3"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/btnDelete"
-        app:layout_constraintTop_toBottomOf="@id/btnPlus" />
+        app:layout_constraintDimensionRatio="1:2" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
