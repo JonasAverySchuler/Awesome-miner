@@ -1,4 +1,4 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.activities
 
 import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_MEDIA_IMAGES
@@ -22,6 +22,8 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.calculatorsafe.FileManager
+import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.DialogHelper

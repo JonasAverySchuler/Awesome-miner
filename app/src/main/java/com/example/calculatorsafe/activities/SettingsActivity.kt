@@ -1,8 +1,9 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.activities
 
 import android.os.Bundle
 import android.os.PersistableBundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.calculatorsafe.R
 
 class SettingsActivity: AppCompatActivity() {
 

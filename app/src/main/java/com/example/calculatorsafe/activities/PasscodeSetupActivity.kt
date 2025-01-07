@@ -1,10 +1,11 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.activities
 
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.widget.Button
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
+import com.example.calculatorsafe.R
 import com.example.calculatorsafe.helpers.PreferenceHelper
 
 class PasscodeSetupActivity: AppCompatActivity() {

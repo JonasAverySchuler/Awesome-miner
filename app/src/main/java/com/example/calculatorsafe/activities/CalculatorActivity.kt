@@ -1,10 +1,11 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.activities
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.calculatorsafe.R
 
 class CalculatorActivity : AppCompatActivity() {
     lateinit var displayTextView: TextView

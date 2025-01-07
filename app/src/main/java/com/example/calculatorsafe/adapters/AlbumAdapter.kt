@@ -63,8 +63,6 @@ class AlbumAdapter(
     override fun getItemCount(): Int = albums.size
 
     fun addAlbum(album: Album) {
-        Log.e("AlbumAdapter", "Adding album: ${album}")
-        Log.e("AlbumAdapter", "Albums: ${albums}")
         // Check if album already exists
         if (!albums.contains(album)) {
             albums.add(album)
@@ -94,7 +92,6 @@ class AlbumAdapter(
 
     fun deleteAlbum(album: Album) {
         val position = albums.indexOf(album)
-        Log.e("AlbumAdapter", "Deleting album: ${album.name}, position: $position")
         if (position != -1) {
             albums.removeAt(position)
             notifyItemRemoved(position)

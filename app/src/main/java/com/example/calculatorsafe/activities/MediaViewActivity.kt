@@ -1,4 +1,4 @@
-package com.example.calculatorsafe
+package com.example.calculatorsafe.activities
 
 import android.content.Intent
 import android.os.Bundle
@@ -7,6 +7,8 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
+import com.example.calculatorsafe.FileManager
+import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.ImagePagerAdapter
 import com.example.calculatorsafe.helpers.DialogHelper
 import java.io.File
