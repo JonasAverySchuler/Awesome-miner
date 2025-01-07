@@ -14,12 +14,9 @@ import android.os.Environment
 import android.provider.Settings
 import android.text.InputFilter
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.adapters.AlbumAdapter
+import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.helpers.PreferenceHelper.saveAlbumMetadata
@@ -198,43 +196,14 @@ class MainActivity : AppCompatActivity() {
                         dialog.dismiss()
                     }
                     1 -> {
-                        showDeleteAlbumConfirmationDialog(album)
+                        DialogHelper.showConfirmationDialog(this, "Delete Album",
+                            "Are you sure you want to delete this album and its contents?","Confirm", "Cancel",
+                            { deleteAlbumAndContents(album)},
+                            {})
                         dialog.dismiss()
                     }
                 }
             }.setCancelable(true).show()
-    }
-
-    private fun showDeleteAlbumConfirmationDialog(album: Album) {
-        // Inflate the custom layout
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_confirmation, null)
-
-        val messageView: TextView = dialogView.findViewById(R.id.dialog_message)
-        val positiveButton: Button = dialogView.findViewById(R.id.btn_positive)
-        val negativeButton: Button = dialogView.findViewById(R.id.btn_negative)
-
-        // Set text color or other properties if needed
-        messageView.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))  // Ensure text color is black
-        messageView.text = "Are you sure you want to delete this album and its contents?"
-        // Create the AlertDialog
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)  // Use the custom layout
-            .setCancelable(false)
-            .create()
-
-        // Set button listeners
-        positiveButton.setOnClickListener {
-            // Proceed with the deletion if the user confirms
-            deleteAlbumAndContents(album)
-            dialog.dismiss()
-        }
-
-        negativeButton.setOnClickListener {
-            dialog.dismiss()  // Do nothing if the user cancels
-        }
-
-        // Show the dialog
-        dialog.show()
     }
 
     private fun showRenameAlbumDialog(album: Album) {
@@ -310,7 +279,6 @@ class MainActivity : AppCompatActivity() {
         albumDir.deleteRecursively()
         albums.remove(album)
         albumAdapter.deleteAlbum(album)
-        albumAdapter.notifyDataSetChanged()
     }
 
     fun updateAlbumName(context: Context, oldAlbumName: String, newAlbumName: String) {
