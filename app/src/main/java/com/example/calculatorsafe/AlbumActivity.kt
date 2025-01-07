@@ -129,7 +129,6 @@ class AlbumActivity : AppCompatActivity() {
     private fun setResultIntent() {
         // Send the result back to MainActivity
         val resultIntent = Intent()
-        resultIntent.putExtra("updatedFileCount", FileManager.getSize())
         resultIntent.putExtra("albumId", album.albumID)  // Send the album ID
         setResult(Activity.RESULT_OK, resultIntent)
     }

@@ -107,10 +107,9 @@ class MainActivity : AppCompatActivity() {
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                val updatedFileCount = result.data?.getIntExtra("updatedFileCount", 0) ?: 0
                 val albumId = result.data?.getStringExtra("albumId") ?: ""
                 if (albumId.isNotEmpty()) {
-                    albumAdapter.updateAlbumFileCount(albumId, updatedFileCount)
+                    albumAdapter.updateAlbumFileCount(albumId, FileManager.getSize())
                 }
             }
         }

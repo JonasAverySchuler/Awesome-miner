@@ -124,7 +124,6 @@ class EncryptedImageAdapter(
             }
         }
         selectedItems.clear()  // Clear the selection after deletion
-        FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
     }
 
     fun restoreSelectedFiles(context: Context) {
@@ -143,7 +142,7 @@ class EncryptedImageAdapter(
         }
         //EncryptionUtils.restorePhotos(selectedFiles, context)
         selectedItems.clear()
-        notifyDataSetChanged()
+        FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
     }
 
     fun updateFromFileManager() {
