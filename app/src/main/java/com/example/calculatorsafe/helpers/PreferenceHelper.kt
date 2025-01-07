@@ -15,7 +15,7 @@ object PreferenceHelper {
         return sharedPreferences.getBoolean(PREF_PASSCODE_SET, false)
     }
 
-    fun setPasscodeSet(context: Context, passcodeSet: Boolean) {
+    private fun setPasscodeSet(context: Context, passcodeSet: Boolean) {
         val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         sharedPreferences.edit().putBoolean(PREF_PASSCODE_SET, passcodeSet).apply()
     }

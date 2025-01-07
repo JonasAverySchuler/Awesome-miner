@@ -1,34 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/black">
+    android:padding="16dp"
+    android:fitsSystemWindows="true">
 
+    <!-- Welcome Text -->
     <TextView
+        android:id="@+id/tvWelcome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Welcome!"
+        android:textSize="24sp"
+        android:textColor="@android:color/black"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tvInstruction"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-        android:text="First Time Passcode Setup"/>
-
-    <EditText
-        android:id="@+id/editText_name"
-        android:layout_width="match_parent"
+    <!-- Instruction Text -->
+    <TextView
+        android:id="@+id/tvInstruction"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Name"/>
+        android:layout_margin="16dp"
+        android:text="Set up a 4 to 8-digit PIN for your vault. Please remember it, as it will be required to unlock your vault."
+        android:textSize="16sp"
+        android:gravity="center"
+        android:paddingTop="8dp"
+        android:textColor="@android:color/black"
+        app:layout_constraintTop_toBottomOf="@id/tvWelcome"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- PIN EditText -->
     <EditText
-        android:id="@+id/editText_password"
-        android:layout_width="match_parent"
+        android:id="@+id/etPin"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:hint="Email"/>
+        android:layout_margin="16dp"
+        android:hint="Enter PIN"
+        android:inputType="numberPassword"
+        android:textSize="18sp"
+        android:maxLength="8"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/tvInstruction"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
 
+    <!-- Error TextView -->
+    <TextView
+        android:id="@+id/tvError"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Invalid PIN. Please enter 4 to 8 digits."
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/etPin"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp" />
+
+    <!-- Save Button -->
     <Button
-        android:id="@+id/button_submit"
-        android:layout_width="wrap_content"
+        android:id="@+id/btnSave"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="Save PIN"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/tvError"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/calculator_button_background"
+        android:textColor="@color/white"/>
 
-        android:text="Submit"
-        />
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

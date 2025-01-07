@@ -133,17 +133,6 @@ class MainActivity : AppCompatActivity() {
         fab.setOnClickListener {
             openAlbumSelector(this)
         }
-
-        if (!PreferenceHelper.isPasscodeSet(this)) {
-            //TODO: passcode setup
-            // Passcode not set, navigate to passcode setup activity
-            val intent = Intent(this, PasscodeSetupActivity::class.java)
-            //startActivity(intent)
-           // finish() // Optionally finish the main activity to prevent going back
-        } else {
-            Toast.makeText(this, "Passcode has been set before", Toast.LENGTH_SHORT).show()
-            // Passcode already set, proceed with normal flow
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

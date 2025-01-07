@@ -1,12 +1,15 @@
 package com.example.calculatorsafe.activities
 
 import android.os.Bundle
-import android.os.PersistableBundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.helpers.PreferenceHelper
+import com.example.calculatorsafe.utils.StringUtils.isPasswordValid
 
 class PasscodeSetupActivity: AppCompatActivity() {
 
@@ -14,37 +17,29 @@ class PasscodeSetupActivity: AppCompatActivity() {
         const val TAG = "PassCodeSetupActivity"
     }
 
-    override fun onCreate(savedInstanceState: Bundle?, persistentState: PersistableBundle?) {
-        super.onCreate(savedInstanceState, persistentState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_passcode_setup)
 
-        // Handle passcode setup UI and logic here
-        // After passcode setup is complete, save the flag
 
-        val passwordCreationEditText: EditText = findViewById(R.id.editText_password)
-        val submissionButton: Button = findViewById(R.id.button_submit)
+        val etPin = findViewById<EditText>(R.id.etPin)
+        val tvError = findViewById<TextView>(R.id.tvError)
+        val btnSave = findViewById<Button>(R.id.btnSave)
 
-        submissionButton.setOnClickListener {
-           if( isPasswordValid(passwordCreationEditText.text?.toString() ?: "")) {
-               PreferenceHelper.setPasscode(this, passwordCreationEditText.text?.toString()?: "")
-               //show password set, remind them to save and not forget
-               finish()
-           } else {
-               //show that the passcode is not valid and show rules
-           }
+        btnSave.setOnClickListener {
+            val pin = etPin.text.toString().trim()
+            if (isPasswordValid(pin)) {
+                // Save passcode logic
+                tvError.visibility = View.INVISIBLE
+                PreferenceHelper.setPasscode(this, pin)
+                Toast.makeText(this, "Passcode set successfully!", Toast.LENGTH_SHORT).show()
+                finish() // Go back or proceed to the next activity
+            } else {
+                // Show error
+                tvError.visibility = View.VISIBLE
+            }
         }
 
-        // Optionally, navigate back to the main activity
-        // val intent = Intent(this, MainActivity::class.java)
-        // startActivity(intent)
-        // finish()
     }
 
-    private fun isPasswordValid(passwordString: String): Boolean {
-        // Define the regex pattern for passcode validation
-        val pattern = Regex("\\d{1,6}")
-
-        // Check if the passcode matches the regex pattern
-        return pattern.matches(passwordString)
-    }
 }

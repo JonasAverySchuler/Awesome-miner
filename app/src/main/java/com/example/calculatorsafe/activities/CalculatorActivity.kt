@@ -18,7 +18,6 @@ class CalculatorActivity : AppCompatActivity() {
     private var currentInput: String = ""
     private var operator: String? = null
     private var operand1: Double? = null
-    private val tempPass = "7111"
     private val maxDisplayLength = 12
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -33,15 +32,6 @@ class CalculatorActivity : AppCompatActivity() {
             R.id.btnEquals, R.id.btnClear,R.id.btnPercent,R.id.btnRoot, R.id.btnPoint
         )
 
-        val isPasscodeSet = PreferenceHelper.isPasscodeSet(this)
-        if (!isPasscodeSet) {
-            Toast.makeText(this, "Please set a passcode", Toast.LENGTH_SHORT).show()
-            //val intent = Intent(this, PasscodeSetupActivity::class.java)
-            //startActivity(intent)
-            //finish()
-           // return
-        }
-
         buttons.forEach { id ->
             val view = findViewById<View>(id)
             when (view) {
@@ -55,6 +45,17 @@ class CalculatorActivity : AppCompatActivity() {
                 }
             }
         }
+        val isPasscodeSet = PreferenceHelper.isPasscodeSet(this)
+        if (!isPasscodeSet) {
+            Toast.makeText(this, "Please set a passcode", Toast.LENGTH_SHORT).show()
+            launchPasscodeSetupActivity()
+            //finish()
+        }
+    }
+
+    private fun launchPasscodeSetupActivity() {
+        val intent = Intent(this, PasscodeSetupActivity::class.java)
+        startActivity(intent)
     }
 
     private fun clearInput() {
@@ -131,7 +132,7 @@ class CalculatorActivity : AppCompatActivity() {
 
     private fun validatePasscode(input: String): Boolean {
         val savedPasscode = PreferenceHelper.getPasscode(this)
-        return input == savedPasscode || input == tempPass
+        return input == savedPasscode
     }
 
     private fun displayResult(value: Double) {
@@ -154,7 +155,7 @@ class CalculatorActivity : AppCompatActivity() {
                 "-" -> operand1!! - operand2
                 "*" -> operand1!! * operand2
                 "/" -> operand1!! / operand2
-                "%" -> operand1!! * (operand2!! / 100)
+                "%" -> operand1!! * (operand2 / 100)
                 "X^" -> operand1!!.pow(operand2)
                 else -> 0.0
             }

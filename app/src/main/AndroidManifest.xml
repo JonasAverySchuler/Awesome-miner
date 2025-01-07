@@ -32,7 +32,9 @@
         <activity
             android:name=".activities.AlbumActivity"
             android:theme="@style/AppTheme"/>
-        <activity android:name=".activities.PasscodeSetupActivity"/>
+        <activity
+            android:name=".activities.PasscodeSetupActivity"
+            android:theme="@style/AppTheme"/>
         <activity
             android:name=".activities.CalculatorActivity"
             android:theme="@style/AppTheme"
@@ -45,7 +47,9 @@
         <activity
             android:name=".activities.MediaViewActivity"
             android:theme="@style/AppTheme"/>
-        <activity android:name=".activities.SettingsActivity"/>
+        <activity
+            android:name=".activities.SettingsActivity"
+            android:theme="@style/AppTheme"/>
     </application>
 
 </manifest>

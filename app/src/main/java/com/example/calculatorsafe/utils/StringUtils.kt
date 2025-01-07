@@ -26,4 +26,12 @@ object StringUtils {
 
         return true
     }
+
+    fun isPasswordValid(passwordString: String): Boolean {
+        // regex pattern for a 4 to 8 digit numeric code
+        val pattern = Regex("^[0-9]{4,8}$")
+
+        // Check if the passcode matches the regex pattern
+        return pattern.matches(passwordString)
+    }
 }
