@@ -35,6 +35,7 @@
         <activity android:name=".activities.PasscodeSetupActivity"/>
         <activity
             android:name=".activities.CalculatorActivity"
+            android:theme="@style/AppTheme"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
