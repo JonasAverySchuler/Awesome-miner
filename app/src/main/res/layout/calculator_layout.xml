@@ -77,13 +77,14 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="0"
-        android:textSize="32sp"
-        android:gravity="center|bottom"
+        android:textSize="55sp"
+        android:gravity="end|bottom"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/guide_row1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
 
+        android:maxLines="1"
         android:textColor="@color/white"/>
 
     <!-- Buttons -->
@@ -291,12 +292,12 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:text="="
-        style="@style/CalculatorButtonStyle"
+        style="@style/CalculatorEqualsButtonStyle"
+
         app:layout_constraintTop_toTopOf="@id/guide_row4"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@id/guide_col3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintDimensionRatio="1:2" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

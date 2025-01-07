@@ -29,6 +29,19 @@
         <item name="android:gravity">center</item>
         <item name="android:background">@drawable/calculator_button_background</item>
         <item name="android:layout_margin">4dp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="layout_constraintDimensionRatio">"1:1"</item>
+    </style>
+
+    <style name="CalculatorEqualsButtonStyle">
+        <item name="android:textSize">25sp</item>
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">0dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/calculator_equals_button_background</item>
+        <item name="android:layout_marginStart">2dp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="layout_constraintDimensionRatio">"1:1"</item>
     </style>
 
 </resources>
