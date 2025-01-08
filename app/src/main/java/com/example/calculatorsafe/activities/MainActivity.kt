@@ -1,14 +1,10 @@
 package com.example.calculatorsafe.activities
 
-import android.Manifest.permission.READ_EXTERNAL_STORAGE
-import android.Manifest.permission.READ_MEDIA_IMAGES
-import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
@@ -22,8 +18,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager.getAlbums
@@ -31,6 +25,8 @@ import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.AlbumAdapter
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.DialogHelper
+import com.example.calculatorsafe.helpers.PermissionHelper
+import com.example.calculatorsafe.helpers.PermissionHelper.REQUEST_CODE_READ_MEDIA
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.helpers.PreferenceHelper.saveAlbumMetadata
@@ -53,7 +49,6 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 
 class MainActivity : AppCompatActivity() {
-    private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumsDir: File
     private lateinit var albumAdapter: AlbumAdapter
     private var targetAlbum: Album? = null
@@ -188,7 +183,9 @@ class MainActivity : AppCompatActivity() {
             .setItems(albumNames) { dialog, which ->
                 targetAlbum = albums[which]
                 dialog.dismiss()
-                checkAndRequestPermissions()
+                PermissionHelper.checkAndRequestPermissions(this) {
+                    accessUserImages()
+                }
             }
             .setNegativeButton("Cancel", null)
             .show()
@@ -294,32 +291,6 @@ class MainActivity : AppCompatActivity() {
         // Optionally remove old metadata
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         prefs.edit().remove(oldAlbumName).apply()
-    }
-
-    private fun checkAndRequestPermissions() {
-        val permissionsNeeded = mutableListOf<String>()
-        //PermissionHelper.checkAllGrantedPermissions(this)
-        // Check for API level
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {  // Android 13 (API 33) or above
-            // Request media permissions separately
-            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(READ_MEDIA_IMAGES)
-            }
-            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(READ_MEDIA_VIDEO)
-            }
-        } else // Android 10 (API 29) to Android 12 (API 31)
-            // Request storage permission for reading media
-            if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(READ_EXTERNAL_STORAGE)
-            }
-        if (permissionsNeeded.isNotEmpty()) {
-            Log.d(TAG, "Requesting permissions: $permissionsNeeded")
-            ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
-        } else {
-            // Permissions are already granted
-            accessUserImages()
-        }
     }
 
     // Handle the permissions request result

@@ -1,12 +1,51 @@
 package com.example.calculatorsafe.helpers
 
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.READ_MEDIA_IMAGES
+import android.Manifest.permission.READ_MEDIA_VIDEO
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 object PermissionHelper {
+    private const val TAG = "PermissionsHelper"
+    const val REQUEST_CODE_READ_MEDIA = 1001
 
+    fun checkAndRequestPermissions(context: Context, accessUserImages: () -> Unit) {
+        val permissionsNeeded = mutableListOf<String>()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {  // Android 13 (API 33) or above
+            // Request media permissions separately
+            if (ContextCompat.checkSelfPermission(context, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_MEDIA_IMAGES)
+            }
+            if (ContextCompat.checkSelfPermission(context, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_MEDIA_VIDEO)
+            }
+        } else // Android 10 (API 29) to Android 12 (API 31)
+        // Request storage permission for reading media
+            if (ContextCompat.checkSelfPermission(context, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                permissionsNeeded.add(READ_EXTERNAL_STORAGE)
+            }
+        if (permissionsNeeded.isNotEmpty()) {
+            Log.d(TAG, "Requesting permissions: $permissionsNeeded")
+            if (context is Activity){
+                ActivityCompat.requestPermissions(context, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
+            } else {
+                Log.e(TAG, "Context is not an Activity, cannot request permissions")
+            }
+        } else {
+            // Permissions are already granted
+            accessUserImages()
+        }
+    }
+
+    //Logging function to show all permissions denied and granted
     fun checkAllGrantedPermissions(context: Context) {
         try {
             val packageManager = context.packageManager
