@@ -13,6 +13,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,6 +24,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager
+import com.example.calculatorsafe.FileManager.getAlbums
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
 import com.example.calculatorsafe.data.Album
@@ -152,17 +154,39 @@ class AlbumActivity : AppCompatActivity() {
             R.id.action_delete -> {
                 // Handle delete action
                 if (adapter.selectedItems.isNotEmpty()) {
-                    DialogHelper.showConfirmationDialog(this, "Delete Album",
-                        "Are you sure you want to delete this album and its contents?","Confirm", "Cancel",
+                    DialogHelper.showConfirmationDialog(this, "Delete Files",
+                        "Are you sure you want to delete the selected files?","Confirm", "Cancel",
                         { adapter.deleteSelectedFiles()
                             exitSelectionMode()},
                         {})
                 }
                 true
             }
+            R.id.action_move -> {
+                // Handle delete action
+                if (adapter.selectedItems.isNotEmpty()) {
+
+                    val albums = getAlbums(this).toMutableList()
+                    val albumsNew = albums.filter { it.albumID != album.albumID } //dont show current album as an option
+                    if (albumsNew.isEmpty()) {
+                        Toast.makeText(this, "No other albums found to move media", Toast.LENGTH_SHORT).show()
+                    } else {
+                        DialogHelper.chooseAlbumDialog(
+                            this,
+                            albumsNew,
+                            "Choose an Album to move media",
+                        ) { album ->
+                            adapter.moveSelectedFiles(File(album.pathString))
+                            exitSelectionMode()
+                        }
+
+                    }
+                }
+                true
+            }
             R.id.action_restore -> {
                 if (adapter.selectedItems.isNotEmpty()) {
-                    DialogHelper.showConfirmationDialog(this, "Restore Album",
+                    DialogHelper.showConfirmationDialog(this, "Restore Files",
                         "Are you sure you want to restore the selected files?","Confirm", "Cancel",
                         { adapter.restoreSelectedFiles(this)
                             exitSelectionMode()  // Exit selection mode after deletion},

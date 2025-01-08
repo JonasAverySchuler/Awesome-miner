@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager
+import com.example.calculatorsafe.FileManager.getAlbums
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.AlbumAdapter
 import com.example.calculatorsafe.data.Album
@@ -126,7 +127,6 @@ class MainActivity : AppCompatActivity() {
                 Log.d("Permission", "Permission denied")
             }
         }
-
 
         mainRecyclerView.adapter = albumAdapter
 
@@ -276,14 +276,6 @@ class MainActivity : AppCompatActivity() {
         // Optionally remove old metadata
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         prefs.edit().remove(oldAlbumName).apply()
-    }
-
-    private fun getAlbums(context: Context): List<Album> {
-        val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return emptyList()
-        return albumDirs.map { dir ->
-            val photoCount = (getImageFileCountFromAlbum(dir))
-            Album(dir.name, photoCount, getAlbumId(context, dir.name) ?: "", dir.absolutePath)
-        }
     }
 
     private fun checkAndRequestPermissions() {

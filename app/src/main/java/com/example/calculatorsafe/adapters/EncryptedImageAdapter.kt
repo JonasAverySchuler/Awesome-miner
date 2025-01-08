@@ -126,6 +126,34 @@ class EncryptedImageAdapter(
         selectedItems.clear()  // Clear the selection after deletion
     }
 
+    fun moveSelectedFiles(destinationFolder: File) {
+        val sortedSelectedItems = selectedItems.sortedDescending()
+
+        for (position in sortedSelectedItems) {
+            val file = encryptedFiles[position]
+            val destinationFile = File(destinationFolder, file.name)
+
+            // Move the file
+            if (file.exists() && file.renameTo(destinationFile)) {
+                // Successfully moved the file
+                encryptedFiles.removeAt(position)  // Remove from the current list
+                notifyItemRemoved(position)  // Notify RecyclerView to update
+
+                // Optionally, add the moved file to a new list (if applicable)
+                // encryptedFiles.add(destinationFile)
+
+                Log.d("Move", "Successfully moved file: ${file.name}")
+            } else {
+                // Handle failure if necessary, e.g., show a message to the user
+                Log.e("Move", "Failed to move file: ${file.name}")
+            }
+        }
+
+        selectedItems.clear()  // Clear the selection after moving the files
+        FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+    }
+
+
     fun restoreSelectedFiles(context: Context) {
         val sortedSelectedItems = selectedItems.sortedDescending()
         //val selectedFiles = getSelectedItems()
