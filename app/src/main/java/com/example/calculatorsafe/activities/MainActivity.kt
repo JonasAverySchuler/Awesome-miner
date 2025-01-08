@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity() {
     private fun openAlbumSelector(context: Context) {
         val albums = getAlbums(context).toMutableList()
         if (albums.isEmpty()) {
-            Toast.makeText(this, "No albums found", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No albums found, please create at least one album", Toast.LENGTH_SHORT).show()
             return
         }
 

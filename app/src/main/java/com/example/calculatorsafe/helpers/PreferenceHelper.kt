@@ -8,6 +8,7 @@ object PreferenceHelper {
     private const val PREF_PASSCODE_SET = "passcode_set"
     private const val PREF_PASSCODE = "passcode"
     private const val IS_FIRST_RUN = "is_first_run"
+    private const val DELETE_ORIGINAL = "delete_original"
 
 
     fun isPasscodeSet(context: Context): Boolean {
@@ -49,5 +50,15 @@ object PreferenceHelper {
     fun setFirstRun(context: Context, isFirstRun: Boolean) {
         val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         sharedPreferences.edit().putBoolean(IS_FIRST_RUN, isFirstRun).apply()
+    }
+
+    fun setDeleteOriginal(context: Context, deleteOriginal: Boolean) {
+        val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sharedPreferences.edit().putBoolean(DELETE_ORIGINAL, deleteOriginal).apply()
+    }
+
+    fun getDeleteOriginal(context: Context): Boolean {
+        val sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return sharedPreferences.getBoolean(DELETE_ORIGINAL, true) //delete original media by default
     }
 }
