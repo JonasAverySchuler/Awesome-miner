@@ -1,5 +1,6 @@
 package com.example.calculatorsafe.adapters
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +12,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
 import com.example.calculatorsafe.data.Album
@@ -105,4 +107,11 @@ class AlbumAdapter(
         }
     }
 
+    fun updateFromFileManager(context: Context) {
+        //encryptedFiles.clear()
+        //encryptedFiles.addAll(FileManager.getFilePaths().map { File(it) })
+        albums.clear()
+        albums.addAll(FileManager.getAlbums(context))
+        notifyDataSetChanged()
+    }
 }

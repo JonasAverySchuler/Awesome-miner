@@ -26,7 +26,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.FileManager.getAlbums
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.AlbumAdapter
@@ -42,7 +41,6 @@ import com.example.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.utils.FileUtils.generateAlbumId
 import com.example.calculatorsafe.utils.FileUtils.getAlbumPath
 import com.example.calculatorsafe.utils.FileUtils.getFilePathFromUri
-import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.example.calculatorsafe.utils.StringUtils.isValidAlbumName
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -61,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private var targetAlbum: Album? = null
     private lateinit var albumActivityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var manageStoragePermissionLauncher: ActivityResultLauncher<Intent>
-    private val REQUEST_CODE_MANAGE_STORAGE = 1003
+    private lateinit var pickMediaLauncher: ActivityResultLauncher<Intent>
 
     companion object{
         private val TAG = "MainActivity"
@@ -107,12 +105,32 @@ class MainActivity : AppCompatActivity() {
             PreferenceHelper.setFirstRun(this, false)
         }
 
+        pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.let { intent ->
+                    // Handle multiple selected files
+                    intent.clipData?.let { clipData ->
+                        for (i in 0 until clipData.itemCount) {
+                            val uri = clipData.getItemAt(i).uri
+                            handleSelectedMedia(uri)
+                        }
+                    } ?: run {
+                        // Handle single selected file
+                        intent.data?.let { uri ->
+                            handleSelectedMedia(uri)
+                        }
+                    }
+                }
+                albumAdapter.updateFromFileManager(this)
+            }
+        }
+
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val albumId = result.data?.getStringExtra("albumId") ?: ""
                 if (albumId.isNotEmpty()) {
-                    albumAdapter.updateAlbumFileCount(albumId, FileManager.getSize())
+                    albumAdapter.updateFromFileManager(this)
                 }
             }
         }
@@ -338,25 +356,6 @@ class MainActivity : AppCompatActivity() {
         //show dialog telling user permissions are required and to enable them to access features
     }
 
-    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.let { intent ->
-                // Handle multiple selected files
-                intent.clipData?.let { clipData ->
-                    for (i in 0 until clipData.itemCount) {
-                        val uri = clipData.getItemAt(i).uri
-                        handleSelectedMedia(uri)
-                    }
-                } ?: run {
-                    // Handle single selected file
-                    intent.data?.let { uri ->
-                        handleSelectedMedia(uri)
-                    }
-                }
-            }
-        }
-    }
-
     private fun saveMetadata(albumName: String, originalFileName: String, encryptedFileName: String, mimeType: String) {
         val metadataFile = File(getAlbumPath(albumsDir,albumName), "album_metadata.xml")
         val document: Document = if (metadataFile.exists()) {
@@ -400,7 +399,7 @@ class MainActivity : AppCompatActivity() {
             saveEncryptedImageToStorage(encryptedImage, albumsDir, targetAlbum, originalFileName, mimeType)
 
             // Step 5: Update the Photo Count in the UI
-            updatePhotoCount(targetAlbum)
+            //updatePhotoCount(targetAlbum)
 
             Log.d("MediaHandler", "MediaUri: $mediaUri")
 
@@ -425,23 +424,6 @@ class MainActivity : AppCompatActivity() {
             Log.e("MediaHandler", "Error handling selected media: ${e.message}", e)
             // Optionally show an error message to the user
             Toast.makeText(this, "Failed to process the selected media.", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun updatePhotoCount(album: Album?) {
-        album?.let {
-            // Get the current count of image files in the album directory
-            val albumDir = File(getAlbumPath(albumsDir, album.name)) // Get the path of the album
-            val imageCount = getImageFileCountFromAlbum(albumDir)
-            // Increment the photo count
-            it.photoCount = imageCount
-
-            // Find the album in the list and notify adapter of the change
-            //val index = albums.indexOfFirst { it.albumID == album.albumID }
-            //if (index != -1) {
-             //   albums[index] = it // Update the album in the list
-               // albumAdapter.notifyItemChanged(index) // Notify the adapter to refresh the item
-           // }
         }
     }
 }
