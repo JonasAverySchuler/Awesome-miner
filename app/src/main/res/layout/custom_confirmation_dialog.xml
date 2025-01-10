@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/dialog_background">
+
+    <!-- Top colored title bar -->
+    <TextView
+        android:id="@+id/confirmationTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/calc_button_blue"
+        android:padding="16dp"
+        android:text="Custom Title"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center" />
+
+    <!-- Middle content (EditText) -->
+    <TextView
+        android:id="@+id/confirmationTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Are you sure?"
+        android:padding="8dp"
+        android:textSize="20sp"
+        android:layout_margin="16dp"
+        android:textColor="@color/black"
+        android:background="@color/white" />
+
+    <!-- Bottom button container -->
+    <LinearLayout
+        style="?android:attr/buttonBarStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/confirmationCancelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel"
+            android:backgroundTint="@color/cancel_red"
+            android:textColor="@color/white"
+            android:padding="16dp"
+            android:textSize="15sp"
+            android:layout_margin="8dp" />
+
+        <Button
+            android:id="@+id/confirmationCreateButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create"
+            android:padding="16dp"
+            android:textSize="15sp"
+            android:backgroundTint="@color/confirm_green"
+            android:textColor="@color/white" />
+    </LinearLayout>
+</LinearLayout>

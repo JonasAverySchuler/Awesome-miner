@@ -26,12 +26,48 @@ object DialogHelper {
         onPositiveClick: () -> Unit,
         onNegativeClick: () -> Unit = {}
     ) {
-        AlertDialog.Builder(context)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton(positiveText) { _, _ -> onPositiveClick() }
-            .setNegativeButton(negativeText) { _, _ -> onNegativeClick() }
-            .show()
+
+        val dialog = Dialog(context)
+        dialog.setContentView(R.layout.custom_confirmation_dialog)
+        dialog.setCancelable(true) // Allow cancel on outside touch if needed
+
+        // Set dialog width and height as a percentage of the screen
+        val window = dialog.window
+        if (window != null) {
+            val metrics = context.resources.displayMetrics
+            val width = (metrics.widthPixels * 0.85).toInt() // 85% of screen width
+            val height = (metrics.heightPixels * 0.5).toInt() // 50% of screen height
+
+            window.setLayout(width, height) // Apply width and height
+            window.setBackgroundDrawableResource(android.R.color.transparent) // Optional: Make corners visible
+        }
+
+        // Make the dialog rounded
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        // Access the views in the custom layout
+        val dialogTitle = dialog.findViewById<TextView>(R.id.confirmationTitle)
+        val dialogTextView = dialog.findViewById<TextView>(R.id.confirmationTextView)
+        val dialogCancelButton = dialog.findViewById<Button>(R.id.confirmationCancelButton)
+        val dialogCreateButton = dialog.findViewById<Button>(R.id.confirmationCreateButton)
+
+        // Set the title dynamically
+        dialogTitle.text = title
+        dialogTextView.text = message
+
+        // Set button click listeners
+        dialogCancelButton.setOnClickListener {
+            onNegativeClick()
+            dialog.dismiss()
+        }
+        dialogCancelButton.text = negativeText
+        dialogCreateButton.text = positiveText
+        dialogCreateButton.setOnClickListener {
+            onPositiveClick()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     fun chooseAlbumDialog(
@@ -83,7 +119,6 @@ object DialogHelper {
         onPositiveClick: (String) -> Unit,
         onNegativeClick: () -> Unit = {}
     ) {
-
         val dialog = Dialog(context)
         dialog.setContentView(R.layout.custom_dialog)
         dialog.setCancelable(true) // Allow cancel on outside touch if needed
