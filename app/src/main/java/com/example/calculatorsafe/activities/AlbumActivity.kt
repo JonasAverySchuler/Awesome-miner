@@ -1,16 +1,9 @@
 package com.example.calculatorsafe.activities
 
-import android.Manifest.permission.READ_EXTERNAL_STORAGE
-import android.Manifest.permission.READ_MEDIA_IMAGES
-import android.Manifest.permission.READ_MEDIA_VIDEO
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.MediaStore
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -19,7 +12,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -29,6 +21,7 @@ import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.DialogHelper
+import com.example.calculatorsafe.helpers.PermissionHelper.checkAndRequestPermissions
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
@@ -104,8 +97,10 @@ class AlbumActivity : AppCompatActivity() {
         albumRecyclerView.adapter = adapter
 
         albumFab.setOnClickListener {
-            checkAndRequestPermissions()
-            }
+            checkAndRequestPermissions(
+                this
+            ) { accessUserImages() }
+        }
 
         toolbar.setNavigationOnClickListener {
             if (selectionModeCallback.isEnabled) {
@@ -198,33 +193,6 @@ class AlbumActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkAndRequestPermissions() {
-        val permissionsNeeded = mutableListOf<String>()
-
-        // Check for API level
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {  // Android 13 (API 33) or above
-            // Request media permissions separately
-            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(READ_MEDIA_IMAGES)
-            }
-            if (ContextCompat.checkSelfPermission(this, READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(READ_MEDIA_VIDEO)
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {  // Android 10 (API 29) to Android 12 (API 31)
-            // Request storage permission for reading media
-            if (ContextCompat.checkSelfPermission(this, READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(READ_EXTERNAL_STORAGE)
-            }
-        }
-        if (permissionsNeeded.isNotEmpty()) {
-            Log.d(TAG, "Requesting permissions: $permissionsNeeded")
-            ActivityCompat.requestPermissions(this, permissionsNeeded.toTypedArray(), REQUEST_CODE_READ_MEDIA)
-        } else {
-            // Permissions are already granted
-            accessUserImages()
-        }
-    }
-
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             if (result.resultCode == Activity.RESULT_OK) {
@@ -247,10 +215,12 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun accessUserImages() {
-        // Your code to pick images or videos from the gallery
-        val pickMediaIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
-            type = "image/* video/*"
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        // Using ACTION_OPEN_DOCUMENT for better control over file selection
+        val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            type = "image/* video/*" // You can adjust to select specific file types
+            putExtra(Intent.EXTRA_LOCAL_ONLY, true) // Limit to local storage only
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple file selection
+            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         }
         pickMediaLauncher.launch(pickMediaIntent)
     }
