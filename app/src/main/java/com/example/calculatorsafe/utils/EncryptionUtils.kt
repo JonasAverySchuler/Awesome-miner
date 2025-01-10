@@ -95,7 +95,7 @@ object EncryptionUtils {
         }
 
         // Log encrypted data size for debugging
-        Log.e("Decryption", "Encrypted data size: ${encryptedData.size}")
+        //Log.e("Decryption", "Encrypted data size: ${encryptedData.size}")
 
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
         val ivSpec = IvParameterSpec(iv)

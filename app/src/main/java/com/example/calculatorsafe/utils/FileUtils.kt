@@ -4,10 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
-import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
@@ -157,18 +155,12 @@ object FileUtils {
             val filePath = getFilePathFromUri(context, mediaUri) ?: ""
             Log.d("MediaHandler", "File Path from getfilepathfromuri: $filePath")
 
-            // Check if the permission is already granted
-            if (Environment.isExternalStorageManager() && PreferenceHelper.getDeleteOriginal(context)) {
+            if (PreferenceHelper.getDeleteOriginal(context)) {
                 // Permission granted, proceed with your file operations
                 Log.d("Permission", "Permission granted")
                 if(!FileUtils.deleteFile(filePath)) {
                     Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
                 }
-            } else {
-                // Permission is not granted, request it by opening the settings
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                intent.data = Uri.parse("package:${context.packageName}")
-                manageStoragePermissionLauncher.launch(intent)
             }
             return newFilePath
         } catch (e: Exception) {

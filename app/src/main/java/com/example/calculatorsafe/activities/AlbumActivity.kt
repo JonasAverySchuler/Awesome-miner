@@ -147,8 +147,8 @@ class AlbumActivity : AppCompatActivity() {
 
         albumFab.setOnClickListener {
             checkAndRequestPermissions(
-                this
-            ) { accessUserImages(pickMediaLauncher) }
+                this,
+             { accessUserImages(pickMediaLauncher) }, manageStoragePermissionLauncher)
         }
     }
 

@@ -179,9 +179,10 @@ class MainActivity : AppCompatActivity() {
             .setItems(albumNames) { dialog, which ->
                 targetAlbum = albums[which]
                 dialog.dismiss()
-                PermissionHelper.checkAndRequestPermissions(this) {
-                    accessUserImages(pickMediaLauncher)
-                }
+                PermissionHelper.checkAndRequestPermissions(this, {
+                    accessUserImages(pickMediaLauncher)},
+                    manageStoragePermissionLauncher)
+
             }
             .setNegativeButton("Cancel", null)
             .show()
