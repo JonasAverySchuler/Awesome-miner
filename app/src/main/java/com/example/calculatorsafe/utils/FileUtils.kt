@@ -12,6 +12,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import com.example.calculatorsafe.data.Album
+import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
 import java.io.File
 import java.net.URLConnection
@@ -153,7 +154,7 @@ object FileUtils {
             Log.d("MediaHandler", "File Path from getfilepathfromuri: $filePath")
 
             // Check if the permission is already granted
-            if (Environment.isExternalStorageManager()) {
+            if (Environment.isExternalStorageManager() && PreferenceHelper.getDeleteOriginal(context)) {
                 // Permission granted, proceed with your file operations
                 Log.d("Permission", "Permission granted")
                 if(!FileUtils.deleteFile(filePath)) {
