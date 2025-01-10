@@ -137,6 +137,10 @@ object FileUtils {
             // Step 1: Get Bitmap from URI
             val contentResolver = context.contentResolver
             val bitmap = getBitmapFromUri(contentResolver, mediaUri)
+            if (bitmap == null) {
+                Log.e("MediaHandler", "Failed to get bitmap from URI: $mediaUri")
+                return ""
+            }
 
             // Step 2: Encrypt the Image
             val encryptedImage = EncryptionUtils.encryptImage(bitmap)

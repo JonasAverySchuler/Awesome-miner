@@ -5,15 +5,17 @@ import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Toast
 import com.example.calculatorsafe.data.Album
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
+import java.io.IOException
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 
@@ -25,11 +27,14 @@ object EncryptionUtils {
         return File(context.filesDir, "Albums")
     }
 
-    fun encryptImage(bitmap: Bitmap): ByteArray {
+    fun encryptImage(bitmap: Bitmap?): ByteArray {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+        if (bitmap == null) {
+            Log.e("Encryption", "Bitmap is null")
+        }
 
         val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+        bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
 
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
@@ -71,9 +76,11 @@ object EncryptionUtils {
         return file.absolutePath
     }
 
-    fun decryptImage(file: File): Bitmap {
+    fun decryptImage(file: File): Bitmap? {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
         val iv = ByteArray(16) // 16 bytes for the IV
+
+        // Read the IV
         file.inputStream().use { inputStream ->
             val bytesRead = inputStream.read(iv)
             if (bytesRead != 16) {
@@ -81,30 +88,63 @@ object EncryptionUtils {
             }
         }
 
+        // Read the encrypted data
         val encryptedData = file.inputStream().use { inputStream ->
             inputStream.skip(16) // Skip the IV
             inputStream.readBytes()
         }
 
+        // Log encrypted data size for debugging
+        Log.e("Decryption", "Encrypted data size: ${encryptedData.size}")
+
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
         val ivSpec = IvParameterSpec(iv)
 
+        // Initialize cipher
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
 
-        val decryptedData = cipher.doFinal(encryptedData)
-        return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
+        try {
+            // Perform decryption
+            val decryptedData = cipher.doFinal(encryptedData)
+
+            // Check if decrypted data is empty
+            if (decryptedData.isEmpty()) {
+                throw IllegalArgumentException("Decrypted data is empty.")
+            }
+
+            // Return the bitmap
+            return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
+        } catch (e: Exception) {
+            Log.e("Decryption", "Error during decryption: ${e.message}")
+            return null
+        }
     }
 
-    fun getBitmapFromUri(contentResolver: ContentResolver, uri: Uri): Bitmap {
-        val source = ImageDecoder.createSource(contentResolver, uri)
-        return ImageDecoder.decodeBitmap(source)
+
+    fun getBitmapFromUri(contentResolver: ContentResolver, uri: Uri): Bitmap? {
+        try {
+            // Open an InputStream to the content URI
+            val inputStream = contentResolver.openInputStream(uri)
+            inputStream?.use {
+                // Decode the bitmap from the input stream
+                return BitmapFactory.decodeStream(it)
+            }
+        } catch (e: FileNotFoundException) {
+            Log.e("ImageDecoder", "File not found for URI: $uri", e)
+        } catch (e: IOException) {
+            Log.e("ImageDecoder", "I/O error while reading URI: $uri", e)
+        } catch (e: Exception) {
+            Log.e("ImageDecoder", "Error loading image from URI: $uri", e)
+        }
+        return null
     }
 
-    private fun saveBitmapToFile(bitmap: Bitmap, newFileName: String, context: Context): File? {
+
+    private fun saveBitmapToFile(bitmap: Bitmap?, newFileName: String, context: Context): File? {
         return try {
             val tempFile = File(context.cacheDir, newFileName)
             val outputStream = FileOutputStream(tempFile)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream) // Save as JPEG with 100% quality
+            bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, outputStream) // Save as JPEG with 100% quality
             outputStream.flush()
             outputStream.close()
             tempFile

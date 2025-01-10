@@ -18,7 +18,7 @@ class EncryptedImageAdapter(
     private val encryptedFiles: MutableList<File>,
     private val itemWidth: Int,
     private val onPhotoClick: (Int) -> Unit,
-    private val decryptFunction: (File) -> Bitmap,
+    private val decryptFunction: (File) -> Bitmap?,
     private val onEnterSelectionMode: () -> Unit
 ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
