@@ -8,6 +8,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.calculatorsafe.BuildConfig
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import java.util.Locale
@@ -31,6 +32,10 @@ class CalculatorActivity : AppCompatActivity() {
             R.id.btnPlus, R.id.btnMinus, R.id.btnTimes, R.id.btnDiv,
             R.id.btnEquals, R.id.btnClear,R.id.btnPercent,R.id.btnRoot, R.id.btnPoint
         )
+
+        if (BuildConfig.IS_DEBUG) {
+         passcodeSuccess()
+        }
 
         buttons.forEach { id ->
             val view = findViewById<View>(id)
