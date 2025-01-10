@@ -1,10 +1,17 @@
 package com.example.calculatorsafe.utils
 
+import android.content.Context
+import com.example.calculatorsafe.FileManager
+
 object StringUtils {
 
-    fun isValidAlbumName(albumName: String): Boolean {
+    fun isValidAlbumName(context: Context, albumName: String): Boolean {
         // Check if the album name is not empty
         if (albumName.isEmpty()) {
+            return false
+        }
+
+        if (FileManager.getAlbums(context).any { it.name == albumName }) {
             return false
         }
 

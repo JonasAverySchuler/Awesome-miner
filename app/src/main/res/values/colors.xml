@@ -12,4 +12,6 @@
     <color name="calc_buttons_background_gray">#212123</color>
     <color name="calc_display_background_gray">#2b292a</color>
     <color name="calc_number_buttons_gray">#343434</color>
+    <color name="cancel_red">#CF142B</color>
+    <color name="confirm_green">#1fd655</color>
 </resources>

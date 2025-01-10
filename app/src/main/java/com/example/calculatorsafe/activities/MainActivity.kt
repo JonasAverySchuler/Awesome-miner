@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Environment
-import android.text.InputFilter
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -218,7 +217,7 @@ class MainActivity : AppCompatActivity() {
             .setView(editText)
             .setPositiveButton("Confirm") { _, _ ->
                 val albumName = editText.text.toString().trim()
-                if (isValidAlbumName(albumName)) {
+                if (isValidAlbumName(this, albumName)) {
                     //renameAlbum(context,albumName)
                     // Refresh the RecyclerView
                     albumAdapter.notifyDataSetChanged()
@@ -233,27 +232,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showNewAlbumDialog(context: Context) {
-        val editText = EditText(this)
-        editText.hint = "Enter album name"
-        editText.filters = arrayOf(InputFilter.LengthFilter(40))
-
-        val dialog = AlertDialog.Builder(this, R.style.CustomAlertDialog)
-            .setTitle("New Album")
-            .setView(editText)
-            .setPositiveButton("Create") { _, _ ->
-                val albumName = editText.text.toString().trim()
-                if (isValidAlbumName(albumName)) {
+        DialogHelper.showEditTextDialog(
+            this,
+            "New Album",
+            "Enter album name",
+            "Create",
+            "Cancel",
+            { albumName ->
+                if (isValidAlbumName(context, albumName)) {
                     createAlbum(context,albumName)
                     // Refresh the RecyclerView
                     albumAdapter.notifyDataSetChanged()
-                } else {
+                } else
                     Toast.makeText(this, "Invalid album name", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .create()
-
-        dialog.show()
+            })
     }
 
     private fun openAlbum(album: Album) {
