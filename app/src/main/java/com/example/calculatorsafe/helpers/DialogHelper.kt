@@ -4,11 +4,12 @@ import android.app.Dialog
 import android.content.Context
 import android.text.InputFilter
 import android.text.InputType
-import android.util.Log
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.example.calculatorsafe.R
@@ -39,19 +40,38 @@ object DialogHelper {
         title: String,
         onAlbumSelected: (Album) -> Unit
     ) {
-        // Extracting album names from the list to display in the dialog
+
+        val dialog = Dialog(context)
+        dialog.setContentView(R.layout.custom_single_choice_dialog)
+        dialog.setCancelable(true)
+
+        // Set dialog dimensions
+        val window = dialog.window
+        if (window != null) {
+            val metrics = context.resources.displayMetrics
+            val width = (metrics.widthPixels * 0.85).toInt()
+            val height = (metrics.heightPixels * 0.5).toInt()
+            window.setLayout(width, height)
+            window.setBackgroundDrawableResource(android.R.color.transparent)
+        }
+
         val albumNames = albums.map { it.name }.toTypedArray()
-        Log.e("chooseAlbumDialog", "albums = $albums albumNames: ${albumNames.joinToString(", ")}")
-        AlertDialog.Builder(context)
-            .setTitle(title)
-            .setSingleChoiceItems(albumNames, -1) { dialog, which ->
-                // `which` is the index of the selected album
-                val selectedAlbum = albums[which]
-                onAlbumSelected(selectedAlbum)
-                dialog.dismiss()  // Dismiss the dialog after selection
-            }
-            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
-            .show()
+        // Set title
+        val titleView = dialog.findViewById<TextView>(R.id.dialogTitle)
+        titleView.text = title
+
+        // Populate list with single-choice items
+        val listView = dialog.findViewById<ListView>(R.id.dialogListView)
+        val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_single_choice, albumNames)
+        listView.adapter = adapter
+        listView.choiceMode = ListView.CHOICE_MODE_SINGLE
+
+        listView.setOnItemClickListener { adapterView, view, i, l ->
+            val selectedAlbum = albums[i]
+            onAlbumSelected(selectedAlbum)
+            dialog.dismiss()
+        }
+        dialog.show()
     }
 
     fun showEditTextDialog(

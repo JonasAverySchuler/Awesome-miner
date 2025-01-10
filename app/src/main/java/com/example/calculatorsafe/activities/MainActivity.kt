@@ -171,20 +171,19 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val albumNames = albums.map { it.name }.toTypedArray()
-
-        AlertDialog.Builder(this, R.style.CustomAlertDialog)
-            .setTitle("Choose an Album to store media")
-            .setItems(albumNames) { dialog, which ->
-                targetAlbum = albums[which]
-                dialog.dismiss()
-                PermissionHelper.checkAndRequestPermissions(this, {
-                    accessUserImages(pickMediaLauncher)},
-                    manageStoragePermissionLauncher)
-
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        DialogHelper.chooseAlbumDialog(
+            context,
+            albums,
+            "Choose an Album to store media"
+        ) { album ->
+            targetAlbum = album
+            PermissionHelper.checkAndRequestPermissions(
+                this, {
+                    accessUserImages(pickMediaLauncher)
+                },
+                manageStoragePermissionLauncher
+            )
+        }
     }
 
     private fun showAlbumOptionsDialog(album: Album) {
