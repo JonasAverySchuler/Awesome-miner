@@ -43,7 +43,6 @@ object PermissionHelper {
             Log.d(TAG, "Requesting permissions: $permissionsNeeded")
 
             if (permissionsNeeded.contains(MANAGE_EXTERNAL_STORAGE)) {
-                Log.e(TAG, "Requesting MANAGE_EXTERNAL_STORAGE permission")
                 // If we need MANAGE_EXTERNAL_STORAGE permission, go to settings
                 if (isManageStoragePermissionAvailable(context)) {
                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
