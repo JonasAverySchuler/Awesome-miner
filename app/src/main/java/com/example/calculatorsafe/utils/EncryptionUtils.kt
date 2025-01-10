@@ -42,12 +42,17 @@ object EncryptionUtils {
     }
 
     fun saveEncryptedImageToStorage(
+        context: Context,
         encryptedImage: ByteArray,
-        albumsDir: File,
         targetAlbum: Album?,
         originalFileName: String,
         mimeType: String
     ): String {
+        val albumsDir = getAlbumsDir(context)
+        if (!albumsDir.exists()) {
+            albumsDir.mkdirs() // Create the albums directory if it doesn't exist
+        }
+
         val albumDir = File(albumsDir, targetAlbum?.name ?: "default")
         if (!albumDir.exists()) {
             albumDir.mkdirs() // Create the album directory if it doesn't exist

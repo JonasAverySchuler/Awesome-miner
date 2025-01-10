@@ -2,8 +2,9 @@ package com.example.calculatorsafe.activities
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -24,22 +25,21 @@ import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PermissionHelper.checkAndRequestPermissions
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
 import com.example.calculatorsafe.utils.EncryptionUtils
-import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
-import com.example.calculatorsafe.utils.EncryptionUtils.saveEncryptedImageToStorage
 import com.example.calculatorsafe.utils.FileUtils
+import com.example.calculatorsafe.utils.FileUtils.accessUserImages
 import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 
 class AlbumActivity : AppCompatActivity() {
-
-    private val REQUEST_CODE_READ_MEDIA = 1001
     private lateinit var albumDirectoryPath: String
     private lateinit var album: Album
     private lateinit var adapter: EncryptedImageAdapter
     private lateinit var selectionModeCallback: OnBackPressedCallback
     private lateinit var toolbar: Toolbar
     private lateinit var mediaViewActivityResultLauncher: ActivityResultLauncher<Intent>
+    private lateinit var pickMediaLauncher: ActivityResultLauncher<Intent>
+    private lateinit var manageStoragePermissionLauncher: ActivityResultLauncher<Intent>
 
     companion object {
         private val TAG = "AlbumActivity"
@@ -96,18 +96,23 @@ class AlbumActivity : AppCompatActivity() {
 
         albumRecyclerView.adapter = adapter
 
-        albumFab.setOnClickListener {
-            checkAndRequestPermissions(
-                this
-            ) { accessUserImages() }
-        }
-
         toolbar.setNavigationOnClickListener {
             if (selectionModeCallback.isEnabled) {
                 selectionModeCallback.handleOnBackPressed()
             } else {
                 setResultIntent()
                 onBackPressedDispatcher.onBackPressed() // Default back behavior
+            }
+        }
+
+        // Register the launcher for the settings intent
+        manageStoragePermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (Environment.isExternalStorageManager()) {
+                // Permission granted, proceed with your file operations
+                Log.d("Permission", "Permission granted")
+            } else {
+                // Permission denied
+                Log.d("Permission", "Permission denied")
             }
         }
 
@@ -118,6 +123,33 @@ class AlbumActivity : AppCompatActivity() {
             }
         }
 
+        pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.let { intent ->
+                    // Handle multiple selected files
+                    intent.clipData?.let { clipData ->
+                        for (i in 0 until clipData.itemCount) {
+                            val uri = clipData.getItemAt(i).uri
+                            val newFilePath = FileUtils.handleSelectedMedia(this, uri, album, manageStoragePermissionLauncher)
+                            adapter.addFile(File(newFilePath))
+                        }
+                    } ?: run {
+                        // Handle single selected file
+                        intent.data?.let { uri ->
+                            val newFilePath = FileUtils.handleSelectedMedia(this, uri, album, manageStoragePermissionLauncher)
+                            adapter.addFile(File(newFilePath))
+                        }
+                    }
+                }
+                toolbar.subtitle = "${adapter.itemCount} images"
+            }
+        }
+
+        albumFab.setOnClickListener {
+            checkAndRequestPermissions(
+                this
+            ) { accessUserImages(pickMediaLauncher) }
+        }
     }
 
     private fun openMediaViewActivity(index: Int) {
@@ -191,52 +223,6 @@ class AlbumActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            if (result.resultCode == Activity.RESULT_OK) {
-                result.data?.let { intent ->
-                    // Handle multiple selected files
-                    intent.clipData?.let { clipData ->
-                        for (i in 0 until clipData.itemCount) {
-                            val uri = clipData.getItemAt(i).uri
-                            handleSelectedMedia(uri)
-                        }
-                    } ?: run {
-                        // Handle single selected file
-                        intent.data?.let { uri ->
-                            handleSelectedMedia(uri)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun accessUserImages() {
-        // Using ACTION_OPEN_DOCUMENT for better control over file selection
-        val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            type = "image/* video/*" // You can adjust to select specific file types
-            putExtra(Intent.EXTRA_LOCAL_ONLY, true) // Limit to local storage only
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple file selection
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-        }
-        pickMediaLauncher.launch(pickMediaIntent)
-    }
-
-    private fun handleSelectedMedia(mediaUri: Uri) {
-        val bitmap = getBitmapFromUri(contentResolver, mediaUri)
-        val encryptedImage = EncryptionUtils.encryptImage(bitmap)
-
-        val originalFileName = FileUtils.getFileNameFromUri(this, mediaUri) ?: "unknown"
-        val mimeType = contentResolver.getType(mediaUri) ?: "unknown"
-
-        //albumDirectoryPath will always have its parent directory and so it is safe to assert it, we need the parentDirectory Albums
-        val newFilePath = saveEncryptedImageToStorage(encryptedImage, File(albumDirectoryPath).parentFile!!, album, originalFileName, mimeType)
-        adapter.addFile(File(newFilePath))
-        toolbar.subtitle = "${adapter.itemCount} images"
-        //deleteImageFromUri(mediaUri) //TODO: Delete file when i feel confident we have a working solution
     }
 
     private fun enterSelectionMode() {
