@@ -34,7 +34,8 @@ class CalculatorActivity : AppCompatActivity() {
         )
 
         if (BuildConfig.IS_DEBUG) {
-         passcodeSuccess()
+         //passcodeSuccess()
+            launchPasscodeSetupActivity()
         }
 
         buttons.forEach { id ->
