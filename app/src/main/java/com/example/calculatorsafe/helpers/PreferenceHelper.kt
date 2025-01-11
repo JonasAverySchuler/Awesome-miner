@@ -32,11 +32,6 @@ object PreferenceHelper {
         return prefs.getString(PREF_PASSCODE,null)
     }
 
-    fun saveAlbumMetadata(context: Context, albumName: String, albumId: String) {
-        val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
-        prefs.edit().putString(albumName, albumId).apply()
-    }
-
     fun getAlbumId(context: Context, albumName: String): String? {
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         return prefs.getString(albumName, null)

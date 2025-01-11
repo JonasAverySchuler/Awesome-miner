@@ -26,7 +26,6 @@ import com.example.calculatorsafe.helpers.PermissionHelper
 import com.example.calculatorsafe.helpers.PermissionHelper.REQUEST_CODE_READ_MEDIA
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
-import com.example.calculatorsafe.helpers.PreferenceHelper.saveAlbumMetadata
 import com.example.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.utils.FileUtils.accessUserImages
 import com.example.calculatorsafe.utils.FileUtils.generateAlbumId
@@ -35,13 +34,8 @@ import com.example.calculatorsafe.utils.FileUtils.handleSelectedMedia
 import com.example.calculatorsafe.utils.StringUtils.isValidAlbumName
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import org.w3c.dom.Document
+import com.google.gson.Gson
 import java.io.File
-import java.io.FileOutputStream
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 
 class MainActivity : AppCompatActivity() {
     private lateinit var albumsDir: File
@@ -254,15 +248,39 @@ class MainActivity : AppCompatActivity() {
         albumActivityResultLauncher.launch(intent)
     }
 
-    private fun createAlbum(context: Context,albumName: String) {
+    private fun createAlbum(context: Context, albumName: String) {
         val albumDir = File(albumsDir, albumName)
         if (!albumDir.exists()) {
-            albumDir.mkdirs()
-            // Add new album to the list and update RecyclerView
-            val albumId = generateAlbumId()
-            saveAlbumMetadata(context, albumName, albumId)
-            val newAlbum = Album(albumName, 0, albumId, albumDir.absolutePath)
-            albumAdapter.addAlbum(newAlbum)
+            if (albumDir.mkdirs()) {
+                // Add new album to the list and update RecyclerView
+                val albumId = generateAlbumId()
+
+                // Create an empty metadata.json file in the album directory
+                val metadataFile = File(albumDir, "metadata.json")
+                val metadata = FileUtils.Metadata(
+                    albumName = albumName,
+                    files = emptyList()  // Start with an empty list of files
+                )
+                metadataFile.writeText(Gson().toJson(metadata))
+
+                // Create a new Album object and update the RecyclerView
+                val newAlbum = Album(
+                    name = albumName,
+                    photoCount = 0,
+                    albumID = albumId,
+                    pathString = albumDir.absolutePath
+                )
+
+                albumAdapter.addAlbum(newAlbum)
+            } else {
+                // Failed to create the album directory
+                Log.e("CreateAlbum", "Failed to create album directory: ${albumDir.absolutePath}")
+                Toast.makeText(context, "Failed to create album.", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            // Album directory already exists
+            Log.e("CreateAlbum", "Album directory already exists: ${albumDir.absolutePath}")
+            Toast.makeText(context, "Album already exists.", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -275,7 +293,7 @@ class MainActivity : AppCompatActivity() {
 
     fun updateAlbumName(context: Context, oldAlbumName: String, newAlbumName: String) {
         val albumId = getAlbumId(context, oldAlbumName) ?: return
-        saveAlbumMetadata(context, newAlbumName, albumId)
+        //saveAlbumMetadata(context, newAlbumName, albumId)
         // Optionally remove old metadata
         val prefs = context.getSharedPreferences("album_metadata", Context.MODE_PRIVATE)
         prefs.edit().remove(oldAlbumName).apply()
@@ -302,32 +320,5 @@ class MainActivity : AppCompatActivity() {
         Toast.makeText(this, "Permissions denied", Toast.LENGTH_SHORT).show()
         //TODO: send user to settings to enable permissions
         //show dialog telling user permissions are required and to enable them to access features
-    }
-
-    private fun saveMetadata(albumName: String, originalFileName: String, encryptedFileName: String, mimeType: String) {
-        val metadataFile = File(getAlbumPath(albumsDir,albumName), "album_metadata.xml")
-        val document: Document = if (metadataFile.exists()) {
-            // Parse existing metadata
-            DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(metadataFile)
-        } else {
-            // Create a new document if none exists
-            DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument().apply {
-                appendChild(createElement("album").apply { setAttribute("name", albumName) })
-            }
-        }
-
-        val albumElement = document.documentElement
-
-        val newImageElement = document.createElement("image").apply {
-            appendChild(document.createElement("originalFileName").apply { textContent = originalFileName })
-            appendChild(document.createElement("encryptedFileName").apply { textContent = encryptedFileName })
-            appendChild(document.createElement("mimeType").apply { textContent = mimeType })
-        }
-        albumElement.appendChild(newImageElement)
-
-        // Save back to XML file
-        TransformerFactory.newInstance().newTransformer().apply {
-            transform(DOMSource(document), StreamResult(FileOutputStream(metadataFile)))
-        }
     }
 }

@@ -53,6 +53,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.8.5'
     implementation 'androidx.navigation:navigation-ui-ktx:2.8.5'
     implementation 'com.github.bumptech.glide:glide:4.15.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
     kapt 'com.github.bumptech.glide:compiler:4.15.1'
     implementation 'androidx.media3:media3-exoplayer:1.5.1'  // Media3 ExoPlayer
     implementation 'androidx.media3:media3-ui:1.5.1'  // UI components (PlayerView)

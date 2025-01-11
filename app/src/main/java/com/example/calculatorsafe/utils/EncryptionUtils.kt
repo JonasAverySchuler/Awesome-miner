@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import com.example.calculatorsafe.data.Album
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -50,8 +49,7 @@ object EncryptionUtils {
         context: Context,
         encryptedImage: ByteArray,
         targetAlbum: Album?,
-        originalFileName: String,
-        mimeType: String
+        encryptedFileName: String,
     ): String {
         val albumsDir = getAlbumsDir(context)
         if (!albumsDir.exists()) {
@@ -63,15 +61,11 @@ object EncryptionUtils {
             albumDir.mkdirs() // Create the album directory if it doesn't exist
         }
 
-        // Generate a unique file name
-        val fileName = "IMG_${System.currentTimeMillis()}.enc"
-        val file = File(albumDir, fileName)
+        val file = File(albumDir, encryptedFileName)
 
         FileOutputStream(file).use {
             it.write(encryptedImage)
         }
-
-        //saveMetadata(targetAlbum?.name ?: "default", originalFileName, fileName, mimeType)
 
         return file.absolutePath
     }
@@ -226,16 +220,4 @@ object EncryptionUtils {
         }
         return false // Restoration failed
     }
-
-    fun restorePhotos(selectedFiles: List<File>, context: Context) {
-        selectedFiles.forEach { file ->
-            val success = restorePhotoToDevice(file, context)
-            if (!success) {
-                Toast.makeText(context, "Failed to restore: ${file.name}", Toast.LENGTH_SHORT).show()
-            }
-        }
-        Toast.makeText(context, "Photos restored successfully!", Toast.LENGTH_SHORT).show()
-    }
-
-
 }

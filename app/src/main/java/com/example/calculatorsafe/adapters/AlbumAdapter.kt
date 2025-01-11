@@ -108,8 +108,6 @@ class AlbumAdapter(
     }
 
     fun updateFromFileManager(context: Context) {
-        //encryptedFiles.clear()
-        //encryptedFiles.addAll(FileManager.getFilePaths().map { File(it) })
         albums.clear()
         albums.addAll(FileManager.getAlbums(context))
         notifyDataSetChanged()

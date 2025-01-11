@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.utils.EncryptionUtils
+import com.example.calculatorsafe.utils.FileUtils.removeFileFromMetadata
 import java.io.File
 
 class EncryptedImageAdapter(
@@ -114,7 +115,11 @@ class EncryptedImageAdapter(
         val sortedSelectedItems = selectedItems.sortedDescending()
         for (position in sortedSelectedItems) {
             val file = encryptedFiles[position]
+            val encryptedFileName = file.name
+            val albumPath = file.parent ?: ""
+            //Log.e("Delete", "Deleting file: ${file.name} album path: $albumPath")
             if (file.exists() && file.delete()) {
+                removeFileFromMetadata(albumPath, encryptedFileName)
                 // Successfully deleted the file
                 encryptedFiles.removeAt(position)  // Remove from the list
                 notifyItemRemoved(position)  // Notify the RecyclerView to update

@@ -13,13 +13,24 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.core.net.toUri
 import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.data.Album
+import com.example.calculatorsafe.data.FileDetail
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 import java.net.URLConnection
 import java.util.UUID
 
 object FileUtils {
+
+    data class Metadata(
+        @SerializedName("album_name")
+        val albumName: String,
+        val files: List<FileDetail>
+    )
 
     fun isImageFile(file: File): Boolean {
         // Check if the file extension or MIME type is for an image
@@ -51,6 +62,85 @@ object FileUtils {
         }
     }
 
+    fun readMetadataFile(albumPath: String): List<FileDetail> {
+        val metadataFile = File(albumPath, "metadata.json")
+        if (!metadataFile.exists()) return emptyList()
+
+        val jsonContent = metadataFile.readText()
+        val metadata = JSONObject(jsonContent)
+        val filesArray = metadata.getJSONArray("files")
+
+        val fileDetails = mutableListOf<FileDetail>()
+        for (i in 0 until filesArray.length()) {
+            val fileObject = filesArray.getJSONObject(i)
+            fileDetails.add(
+                FileDetail(
+                    originalFileName = fileObject.getString("original_name"),
+                    encryptedFileName = fileObject.getString("encrypted_name"),
+                    mimeType = fileObject.getString("type"),
+                    createdAt = fileObject.getString("created_at")
+                )
+            )
+        }
+        return fileDetails
+    }
+
+    fun addFileToMetadata(albumPath: String, newFileDetail: FileDetail) {
+        val fileDetails = readMetadataFile(albumPath).toMutableList()
+        fileDetails.add(newFileDetail)
+        createOrUpdateMetadataFile(albumPath, fileDetails)
+    }
+
+    fun removeFileFromMetadata(albumPath: String, encryptedName: String) {
+        val fileDetails = readMetadataFile(albumPath).toMutableList()
+        fileDetails.removeAll { it.encryptedFileName == encryptedName }
+        createOrUpdateMetadataFile(albumPath, fileDetails)
+    }
+
+    fun createOrUpdateMetadataFile(albumPath: String, fileDetails: List<FileDetail>) {
+        val metadataFile = File(albumPath, "metadata.json")
+        val metadata = JSONObject()
+        val filesArray = JSONArray()
+
+        for (fileDetail in fileDetails) {
+            val fileObject = JSONObject()
+            fileObject.put("original_name", fileDetail.originalFileName)
+            fileObject.put("encrypted_name", fileDetail.encryptedFileName)
+            fileObject.put("type", fileDetail.mimeType)
+            fileObject.put("created_at", fileDetail.createdAt)
+            filesArray.put(fileObject)
+        }
+
+        metadata.put("album_name", File(albumPath).name)
+        metadata.put("files", filesArray)
+
+        metadataFile.writeText(metadata.toString(4)) // Indented JSON for readability
+    }
+
+    fun getEncryptedFilesFromMetadata(albumDirectoryPath: String): List<File> {
+        val metadataFile = File(albumDirectoryPath, "metadata.json")
+        if (!metadataFile.exists()) {
+            Log.e("FileListing", "Metadata file not found.")
+            return emptyList()
+        }
+
+        val gson = Gson()
+        val metadata = gson.fromJson(metadataFile.readText(), Metadata::class.java)
+        Log.e("Metadata", "Parsed metadata: $metadata")
+
+        // Now you can access the files
+        val files = metadata.files.mapNotNull {
+            val file = File(albumDirectoryPath, it.encryptedFileName)
+            Log.d("FileListing", "Found file: $file")
+            if (file.exists()) {
+                Log.d("FileListing", "File exists: $file")
+                file
+            }
+            else
+                null
+        }
+        return files
+    }
 
 
     fun getAlbumPath(albumsDir: File, albumName: String): String {
@@ -170,15 +260,17 @@ object FileUtils {
             // Step 3: Retrieve File Name and MIME Type
             val originalFileName = getFileNameFromUri(context, mediaUri) ?: "unknown_${System.currentTimeMillis()}.jpg"
             val mimeType = contentResolver.getType(mediaUri) ?: "image/jpeg"
+            val encryptedFileName = "enc_${System.currentTimeMillis()}"
 
             // Step 4: Save the Encrypted Image
-            val newFilePath = EncryptionUtils.saveEncryptedImageToStorage(context, encryptedImage,targetAlbum, originalFileName, mimeType)
+            val newFilePath = EncryptionUtils.saveEncryptedImageToStorage(context, encryptedImage,targetAlbum, encryptedFileName)
 
             Log.d("MediaHandler", "MediaUri: $mediaUri")
 
             val filePath = getFilePathFromUri(context, mediaUri) ?: ""
             Log.d("MediaHandler", "File Path from getfilepathfromuri: $filePath")
 
+            // Step 5: Delete Original Media if preference set
             if (PreferenceHelper.getDeleteOriginal(context)) {
                 // Permission granted, proceed with your file operations
                 Log.d("Permission", "Permission granted")
@@ -186,6 +278,19 @@ object FileUtils {
                     Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
                 }
             }
+
+            // Step 6: Update Metadata
+            val fileDetail = FileDetail(
+                originalFileName = originalFileName,
+                encryptedFileName = encryptedFileName,
+                mimeType = if (mimeType.startsWith("image")) "image" else "video",
+                createdAt = System.currentTimeMillis().toString()
+            )
+            val albumPath = targetAlbum.pathString
+            val existingMetadata = readMetadataFile(albumPath).toMutableList()
+            existingMetadata.add(fileDetail)
+            createOrUpdateMetadataFile(albumPath, existingMetadata)
+
             return newFilePath
         } catch (e: Exception) {
             Log.e("MediaHandler", "Error handling selected media: ${e.message}", e)

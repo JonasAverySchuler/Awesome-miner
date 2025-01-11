@@ -52,7 +52,8 @@ class AlbumActivity : AppCompatActivity() {
         albumDirectoryPath = intent.getStringExtra("albumDirectoryPath") ?: ""
         album = Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
 
-        val encryptedFiles = File(albumDirectoryPath).listFiles { _, name -> name.endsWith(".enc") }?.toList() ?: emptyList()
+        val encryptedFiles = FileUtils.getEncryptedFilesFromMetadata(albumDirectoryPath)
+        Log.d(TAG, "Encrypted files: $encryptedFiles")
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
 
         toolbar = findViewById<Toolbar>(R.id.album_toolbar)
