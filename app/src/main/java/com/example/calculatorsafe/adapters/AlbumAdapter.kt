@@ -16,6 +16,9 @@ import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
 import com.example.calculatorsafe.data.Album
+import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
+import com.example.calculatorsafe.utils.FileUtils.getEncryptedFilesFromMetadata
+import java.io.File
 
 class AlbumAdapter(
     private val albums: MutableList<Album>,
@@ -110,6 +113,29 @@ class AlbumAdapter(
     fun updateFromFileManager(context: Context) {
         albums.clear()
         albums.addAll(FileManager.getAlbums(context))
+        notifyDataSetChanged()
+    }
+
+    fun updateFromMetadata(context: Context) {
+        // Retrieve updated metadata
+        val albumsDir = File(context.filesDir, "Albums")
+        val albumDirs = albumsDir.listFiles { file -> file.isDirectory } ?: return
+        val updatedAlbums = albumDirs.map { dir ->
+            val albumId = getAlbumId(context, dir.name) ?: ""
+            val albumFiles = getEncryptedFilesFromMetadata(dir.absolutePath)
+            val photoCount = albumFiles.size
+
+            Album(
+                name = dir.name,
+                photoCount = photoCount,
+                albumID = albumId,
+                pathString = dir.absolutePath
+            )
+        }
+
+        // Update the dataset and notify adapter
+        albums.clear()
+        albums.addAll(updatedAlbums)
         notifyDataSetChanged()
     }
 }

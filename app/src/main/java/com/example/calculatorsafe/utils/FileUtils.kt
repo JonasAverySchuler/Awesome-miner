@@ -29,7 +29,7 @@ object FileUtils {
     data class Metadata(
         @SerializedName("album_name")
         val albumName: String,
-        val files: List<FileDetail>
+        var files: List<FileDetail>
     )
 
     fun isImageFile(file: File): Boolean {
@@ -126,7 +126,7 @@ object FileUtils {
 
         val gson = Gson()
         val metadata = gson.fromJson(metadataFile.readText(), Metadata::class.java)
-        Log.e("Metadata", "Parsed metadata: $metadata")
+        //Log.e("Metadata", "Parsed metadata: $metadata")
 
         // Now you can access the files
         val files = metadata.files.mapNotNull {

@@ -122,11 +122,9 @@ class MainActivity : AppCompatActivity() {
 
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            Log.d(TAG, "albumActivityResultLauncher: $result")
             if (result.resultCode == Activity.RESULT_OK) {
-                val albumId = result.data?.getStringExtra("albumId") ?: ""
-                if (albumId.isNotEmpty()) {
-                    albumAdapter.updateFromFileManager(this)
-                }
+                albumAdapter.updateFromMetadata(this)
             }
         }
 

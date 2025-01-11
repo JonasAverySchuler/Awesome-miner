@@ -10,6 +10,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import com.example.calculatorsafe.data.Album
+import com.google.gson.Gson
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -133,9 +134,6 @@ object EncryptionUtils {
             inputStream.readBytes()
         }
 
-        // Log encrypted data size for debugging
-        //Log.e("Decryption", "Encrypted data size: ${encryptedData.size}")
-
         val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
         val ivSpec = IvParameterSpec(iv)
 
@@ -159,7 +157,6 @@ object EncryptionUtils {
         }
     }
 
-
     fun getBitmapFromUri(contentResolver: ContentResolver, uri: Uri): Bitmap? {
         try {
             // Open an InputStream to the content URI
@@ -178,7 +175,6 @@ object EncryptionUtils {
         return null
     }
 
-
     private fun saveBitmapToFile(bitmap: Bitmap?, newFileName: String, context: Context): File? {
         return try {
             val tempFile = File(context.cacheDir, newFileName)
@@ -193,14 +189,32 @@ object EncryptionUtils {
         }
     }
 
-
     fun restorePhotoToDevice(file: File, context: Context): Boolean {
         val decryptedBitmap = decryptImage(file)
-        val restoredFile = saveBitmapToFile(decryptedBitmap,"restored_img_${System.currentTimeMillis()}.jpg", context) ?: return false
+        val restoredFile = saveBitmapToFile(decryptedBitmap, "restored_img_${System.currentTimeMillis()}.jpg", context) ?: return false
+
         try {
-            val fileName = "${System.currentTimeMillis()}_${file.name}"
+            // Get the metadata for the album directory
+            val albumDir = File(file.parent!!) //Parent is the album directory so we are certain it exists so it is safe to assert this here
+            val metadataFile = File(albumDir, "metadata.json")
+
+            // Read and update metadata
+            val gson = Gson()
+            val metadata = if (metadataFile.exists()) {
+                gson.fromJson(metadataFile.readText(), FileUtils.Metadata::class.java)
+            } else {
+                FileUtils.Metadata(albumName = albumDir.name, files = emptyList())
+            }
+
+            // Find the file in the metadata and retrieve the original name
+            val fileDetail = metadata.files.find { it.encryptedFileName == file.name }
+            val originalFileName = fileDetail?.originalFileName ?: "${System.currentTimeMillis()}.jpg"
+
+            // Step 1: Name the restored file with the original file name
+            val restoredFileName = "$originalFileName.jpg"
+
             val contentValues = ContentValues().apply {
-                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Images.Media.DISPLAY_NAME, restoredFileName)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
                 put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Restored")
             }
@@ -212,7 +226,17 @@ object EncryptionUtils {
                 resolver.openOutputStream(it).use { outputStream ->
                     restoredFile.inputStream().copyTo(outputStream!!)
                 }
-                file.delete() // Delete the encrypted file
+
+                // Step 2: Delete the encrypted file
+                file.delete()
+
+                // Step 3: Remove the file from metadata and save
+                val updatedFiles = metadata.files.filterNot { it.encryptedFileName == file.name }
+                metadata.files = updatedFiles
+
+                // Save the updated metadata
+                metadataFile.writeText(gson.toJson(metadata))
+
                 return true // Photo restored successfully
             }
         } catch (e: Exception) {
@@ -220,4 +244,5 @@ object EncryptionUtils {
         }
         return false // Restoration failed
     }
+
 }
