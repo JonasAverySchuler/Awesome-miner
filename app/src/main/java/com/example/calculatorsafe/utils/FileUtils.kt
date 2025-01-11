@@ -235,7 +235,7 @@ object FileUtils {
     fun accessUserImages(pickMediaLauncher: ActivityResultLauncher<Intent>) {
         // Using ACTION_OPEN_DOCUMENT for better control over file selection
         val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            type = "*/*" // You can adjust to select specific file types
+            type = "*/*" // All file types
             putExtra(Intent.EXTRA_LOCAL_ONLY, true) // Limit to local storage only
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple file selection
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION

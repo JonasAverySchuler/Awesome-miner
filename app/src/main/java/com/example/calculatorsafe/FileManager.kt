@@ -2,7 +2,8 @@ package com.example.calculatorsafe
 
 import android.content.Context
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
+import com.example.calculatorsafe.utils.FileUtils
+import com.google.gson.Gson
 import java.io.File
 
 object FileManager {
@@ -32,16 +33,35 @@ object FileManager {
 
         // Map each directory to an Album object
         return albumDirs.map { dir ->
-            val photoCount = getImageFileCountFromAlbum(dir) // Get photo count for this album
-            val albumId = getAlbumId(context, dir.name) ?: "" // Get album ID (if available)
-            Album(
-                name = dir.name,
-                photoCount = photoCount,
-                albumID = albumId,
-                pathString = dir.absolutePath // Path to the album directory
-            )
+            val metadataFile = File(dir, "metadata.json")
+
+            // If metadata file exists, parse it
+            val album = if (metadataFile.exists()) {
+                val gson = Gson()
+                val metadata = gson.fromJson(metadataFile.readText(), FileUtils.Metadata::class.java)
+                val photoCount = metadata.files.size // Count files in metadata
+                val albumId = metadata.albumName ?: "" // Get album name or default to empty string
+                Album(
+                    name = metadata.albumName ?: dir.name, // Use album name from metadata or fallback to directory name
+                    photoCount = photoCount,
+                    albumID = albumId,
+                    pathString = dir.absolutePath // Path to the album directory
+                )
+            } else {
+                // If metadata file does not exist, use default logic
+                val photoCount = getImageFileCountFromAlbum(dir) // Get photo count from directory
+                Album(
+                    name = dir.name,
+                    photoCount = photoCount,
+                    albumID = "", // No album ID if metadata does not exist
+                    pathString = dir.absolutePath
+                )
+            }
+
+            album
         }
     }
+
 
     // Helper function to get the number of image files in an album directory
     private fun getImageFileCountFromAlbum(albumDir: File): Int {

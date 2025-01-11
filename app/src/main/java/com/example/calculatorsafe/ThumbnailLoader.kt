@@ -14,7 +14,10 @@ object ThumbnailLoader {
     fun loadThumbnailAsync(album: Album, imageView: ImageView, callback: (ImageView, Bitmap?) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val firstImagePath = File(album.pathString).listFiles()?.firstOrNull()?.absolutePath ?: return@launch callback(imageView, null)
+                val albumDir = File(album.pathString)
+                val encryptedFiles = albumDir.listFiles()?.filter { !it.name.endsWith(".json") } ?: emptyList() //sort out metadata files
+                // If there are no encrypted images, return early
+                val firstImagePath = encryptedFiles.firstOrNull()?.absolutePath ?: return@launch callback(imageView, null)
                 val decryptedBitmap = EncryptionUtils.decryptImage(File(firstImagePath))
                 withContext(Dispatchers.Main) {
                     callback(imageView, decryptedBitmap)
