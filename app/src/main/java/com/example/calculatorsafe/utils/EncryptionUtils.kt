@@ -76,6 +76,51 @@ object EncryptionUtils {
         return file.absolutePath
     }
 
+    fun decryptFile(file: File): File? {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+        val iv = ByteArray(16) // 16 bytes for the IV
+
+        // Read the IV
+        file.inputStream().use { inputStream ->
+            val bytesRead = inputStream.read(iv)
+            if (bytesRead != 16) {
+                throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
+            }
+        }
+
+        // Read the encrypted data
+        val encryptedData = file.inputStream().use { inputStream ->
+            inputStream.skip(16) // Skip the IV
+            inputStream.readBytes()
+        }
+
+        // Initialize the cipher
+        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+        val ivSpec = IvParameterSpec(iv)
+
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+
+        try {
+            // Perform decryption
+            val decryptedData = cipher.doFinal(encryptedData)
+
+            // Check if decrypted data is empty
+            if (decryptedData.isEmpty()) {
+                throw IllegalArgumentException("Decrypted data is empty.")
+            }
+
+            // Create a temporary file for the decrypted content
+            val decryptedFile = File(file.parent, "decrypted_${file.nameWithoutExtension}")
+            decryptedFile.writeBytes(decryptedData)
+
+            return decryptedFile
+        } catch (e: Exception) {
+            Log.e("Decryption", "Error during decryption: ${e.message}")
+            return null
+        }
+    }
+
+
     fun decryptImage(file: File): Bitmap? {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
         val iv = ByteArray(16) // 16 bytes for the IV

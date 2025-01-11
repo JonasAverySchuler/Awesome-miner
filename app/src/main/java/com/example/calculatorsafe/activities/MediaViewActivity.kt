@@ -9,13 +9,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.adapters.ImagePagerAdapter
+import com.example.calculatorsafe.adapters.MediaItemWrapper
+import com.example.calculatorsafe.adapters.MediaPagerAdapter
 import com.example.calculatorsafe.helpers.DialogHelper
+import com.example.calculatorsafe.utils.EncryptionUtils.decryptFile
+import com.example.calculatorsafe.utils.FileUtils.getFileType
 import java.io.File
 
 class MediaViewActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
-    private lateinit var adapter: ImagePagerAdapter
+    private lateinit var adapter: MediaPagerAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,10 +28,25 @@ class MediaViewActivity : AppCompatActivity() {
         val btnDelete = findViewById<Button>(R.id.btnDelete)
         val btnRestore = findViewById<Button>(R.id.btnRestore)
 
-        val imagePaths = FileManager.getFilePaths()
-        Log.e("MediaViewActivity", "Image paths: $imagePaths")
+        val filePaths = FileManager.getFilePaths()
+        val mediaItems: MutableList<MediaItemWrapper> = mutableListOf()
+
+        for (filePath in filePaths) {
+            val decryptedFile = decryptFile(File(filePath))
+            Log.e("MediaViewActivity", "Decrypted file path: ${decryptedFile?.absolutePath}")
+            Log.e("MediaViewActivity", "Decrypted ${decryptedFile?.extension}")
+            // Once decrypted, get the file type (image/video)
+            decryptedFile?.let {
+                val fileType = getFileType(it)
+                Log.e("MediaViewActivity", "File type: $fileType")
+                getFileType(it)?.let { mediaItems.add(it) }
+            }
+        }
+        Log.e("MediaViewActivity", "Image paths: $filePaths")
+        Log.e("MediaViewActivity", "Media items: $mediaItems")
+
         val startPosition = intent.getIntExtra("position", 0)
-        adapter = ImagePagerAdapter(imagePaths.toMutableList())
+        adapter = MediaPagerAdapter(mediaItems)
         viewPager.adapter = adapter
         viewPager.setCurrentItem(startPosition, false)
 

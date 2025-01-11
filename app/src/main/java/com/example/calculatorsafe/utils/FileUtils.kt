@@ -7,8 +7,11 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
+import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.core.net.toUri
+import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
@@ -28,6 +31,27 @@ object FileUtils {
         // Logic to get MIME type (could be based on file extension or using a MIME detection library)
         return URLConnection.guessContentTypeFromName(file.name) ?: "unknown"
     }
+
+    fun getFileType(file: File): MediaItemWrapper? {
+        val fileExtension = file.extension.lowercase()
+
+        // Use MimeTypeMap to get MIME type
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
+
+        return when {
+            mimeType?.startsWith("image") == true -> {
+                // It's an image
+                MediaItemWrapper.Image(file.absolutePath) // Create a media item for image
+            }
+            mimeType?.startsWith("video") == true -> {
+                // It's a video
+                MediaItemWrapper.Video(file.toUri()) // Create a media item for video
+            }
+            else -> null
+        }
+    }
+
+
 
     fun getAlbumPath(albumsDir: File, albumName: String): String {
         val albumDir = File(albumsDir, albumName)
@@ -121,7 +145,7 @@ object FileUtils {
     fun accessUserImages(pickMediaLauncher: ActivityResultLauncher<Intent>) {
         // Using ACTION_OPEN_DOCUMENT for better control over file selection
         val pickMediaIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            type = "image/* video/*" // You can adjust to select specific file types
+            type = "*/*" // You can adjust to select specific file types
             putExtra(Intent.EXTRA_LOCAL_ONLY, true) // Limit to local storage only
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true) // Allow multiple file selection
             flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
