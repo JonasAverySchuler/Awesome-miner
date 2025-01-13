@@ -1,8 +1,8 @@
 package com.example.calculatorsafe.activities
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -12,13 +12,16 @@ import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.adapters.MediaPagerAdapter
 import com.example.calculatorsafe.helpers.DialogHelper
-import com.example.calculatorsafe.utils.EncryptionUtils.decryptFile
-import com.example.calculatorsafe.utils.FileUtils.getFileType
+import com.example.calculatorsafe.utils.FileUtils
 import java.io.File
 
 class MediaViewActivity : AppCompatActivity() {
     private lateinit var viewPager: ViewPager2
     private lateinit var adapter: MediaPagerAdapter
+
+    companion object {
+        const val TAG = "MediaViewActivity"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,25 +31,28 @@ class MediaViewActivity : AppCompatActivity() {
         val btnDelete = findViewById<Button>(R.id.btnDelete)
         val btnRestore = findViewById<Button>(R.id.btnRestore)
 
-        val filePaths = FileManager.getFilePaths()
-        val mediaItems: MutableList<MediaItemWrapper> = mutableListOf()
+        val albumDirectoryPath = intent.getStringExtra("albumDirectoryPath") ?: ""
+        val startPosition = intent.getIntExtra("position", 0)
 
-        for (filePath in filePaths) {
-            val decryptedFile = decryptFile(File(filePath))
-            Log.e("MediaViewActivity", "Decrypted file path: ${decryptedFile?.absolutePath}")
-            Log.e("MediaViewActivity", "Decrypted ${decryptedFile?.extension}")
-            // Once decrypted, get the file type (image/video)
-            decryptedFile?.let {
-                val fileType = getFileType(it)
-                Log.e("MediaViewActivity", "File type: $fileType")
-                getFileType(it)?.let { mediaItems.add(it) }
+        val fileDetails = FileUtils.readMetadataFile(albumDirectoryPath)
+
+        val mediaItemWrapper = fileDetails.map { fileDetail ->
+            if (fileDetail.mimeType == "image") {
+                val fullPath = "$albumDirectoryPath/${fileDetail.encryptedFileName}"
+                MediaItemWrapper.Image(fullPath)
+            } else {
+                MediaItemWrapper.Video(
+                    Uri.fromFile(
+                        File(
+                            albumDirectoryPath,
+                            fileDetail.encryptedFileName
+                        )
+                    )
+                ) //TODO: Handle videos and error check this
             }
         }
-        Log.e("MediaViewActivity", "Image paths: $filePaths")
-        Log.e("MediaViewActivity", "Media items: $mediaItems")
 
-        val startPosition = intent.getIntExtra("position", 0)
-        adapter = MediaPagerAdapter(mediaItems)
+        adapter = MediaPagerAdapter(mediaItemWrapper.toMutableList())
         viewPager.adapter = adapter
         viewPager.setCurrentItem(startPosition, false)
 

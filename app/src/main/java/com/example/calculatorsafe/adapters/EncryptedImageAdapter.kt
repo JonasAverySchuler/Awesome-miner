@@ -142,7 +142,7 @@ class EncryptedImageAdapter(
             if (file.exists() && file.renameTo(destinationFile)) {
                 // Successfully moved the file
                 encryptedFiles.removeAt(position)  // Remove from the current list
-                notifyItemRemoved(position)  // Notify RecyclerView to update
+                notifyItemRemoved(position)
 
                 // Optionally, add the moved file to a new list (if applicable)
                 // encryptedFiles.add(destinationFile)
@@ -161,7 +161,6 @@ class EncryptedImageAdapter(
 
     fun restoreSelectedFiles(context: Context) {
         val sortedSelectedItems = selectedItems.sortedDescending()
-        //val selectedFiles = getSelectedItems()
         for (position in sortedSelectedItems) {
             val file = encryptedFiles[position]
             if (file.exists() && EncryptionUtils.restorePhotoToDevice(file, context)) {
@@ -173,7 +172,6 @@ class EncryptedImageAdapter(
                 Log.e("Restore", "Failed to restore file: ${file.name}")
             }
         }
-        //EncryptionUtils.restorePhotos(selectedFiles, context)
         selectedItems.clear()
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
     }

@@ -91,7 +91,6 @@ class MediaPagerAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        Log.e(TAG, "Image path bind: $position")
         when (holder) {
             is ImageViewHolder -> holder.bind((mediaItems[position] as MediaItemWrapper.Image).path)
             is VideoViewHolder -> holder.bind((mediaItems[position] as MediaItemWrapper.Video).uri)

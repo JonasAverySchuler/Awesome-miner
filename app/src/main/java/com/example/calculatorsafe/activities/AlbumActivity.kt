@@ -53,7 +53,6 @@ class AlbumActivity : AppCompatActivity() {
         album = Album(albumName, getImageFileCountFromAlbum(File(albumDirectoryPath)), getAlbumId(this, albumName) ?: "", albumDirectoryPath)
 
         val encryptedFiles = FileUtils.getEncryptedFilesFromMetadata(albumDirectoryPath)
-        Log.d(TAG, "Encrypted files: $encryptedFiles")
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
 
         toolbar = findViewById<Toolbar>(R.id.album_toolbar)
@@ -156,6 +155,7 @@ class AlbumActivity : AppCompatActivity() {
     private fun openMediaViewActivity(index: Int) {
         val intent = Intent(this, MediaViewActivity::class.java)
         intent.putExtra("position", index)
+        intent.putExtra("albumDirectoryPath", albumDirectoryPath)
         mediaViewActivityResultLauncher.launch(intent)
     }
 

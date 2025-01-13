@@ -126,7 +126,6 @@ object FileUtils {
 
         val gson = Gson()
         val metadata = gson.fromJson(metadataFile.readText(), Metadata::class.java)
-        //Log.e("Metadata", "Parsed metadata: $metadata")
 
         // Now you can access the files
         val files = metadata.files.mapNotNull {
@@ -141,7 +140,6 @@ object FileUtils {
         }
         return files
     }
-
 
     fun getAlbumPath(albumsDir: File, albumName: String): String {
         val albumDir = File(albumsDir, albumName)
