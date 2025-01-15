@@ -19,6 +19,7 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import javax.crypto.Cipher
+import javax.crypto.CipherInputStream
 import javax.crypto.spec.IvParameterSpec
 
 object EncryptionUtils {
@@ -116,6 +117,11 @@ object EncryptionUtils {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
         val iv = ByteArray(16) // 16 bytes for the IV
 
+        // Temporary file for decrypted data
+        val decryptedFile = File.createTempFile("decrypted_", ".tmp", file.parentFile).apply {
+            deleteOnExit() // Ensures the file is deleted when the JVM exits
+        }
+
         try {
             // Read the IV
             file.inputStream().use { inputStream ->
@@ -125,51 +131,55 @@ object EncryptionUtils {
                 }
             }
 
-            // Stream and process encrypted data in chunks
-            val encryptedData = ByteArrayOutputStream().use { outputStream ->
-                file.inputStream().use { inputStream ->
-                    inputStream.skip(16) // Skip the IV
-                    val buffer = ByteArray(8192) // 8 KB buffer
-                    var bytesRead: Int
-                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        outputStream.write(buffer, 0, bytesRead)
-                    }
-                }
-                outputStream.toByteArray()
-            }
-
+            // Set up the cipher for decryption
             val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
             val ivSpec = IvParameterSpec(iv)
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
 
-            //TODO: make sure for huge files to do this in a buffer to avoid too much memory use
-            val decryptedData = cipher.doFinal(encryptedData)
+            // Use a CipherInputStream to decrypt in chunks and write to a file
+            FileOutputStream(decryptedFile).use { outputStream ->
+                val buffer = ByteArray(64 * 1024) // 64 KB buffer
+                file.inputStream().use { inputStream ->
+                    inputStream.skip(16) // Skip the IV
+                    val cipherInputStream = CipherInputStream(inputStream, cipher)
 
-            if (decryptedData.isEmpty()) {
-                throw IllegalArgumentException("Decrypted data is empty.")
-            }
-
-            if(downscale) {
-                // Decode and scale down the bitmap to prevent OOM
-                val options = BitmapFactory.Options().apply {
-                    inJustDecodeBounds = true // Decode only bounds to get image dimensions
-                    inPreferredConfig = Bitmap.Config.RGB_565
+                    var bytesRead: Int
+                    while (cipherInputStream.read(buffer).also { bytesRead = it } != -1) {
+                        outputStream.write(buffer, 0, bytesRead)
+                    }
                 }
-
-                BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size, options)
-
-                // Calculate inSampleSize to scale down the image if necessary
-                options.inSampleSize = calculateInSampleSize(options, maxWidth = 100, maxHeight = 100)
-                options.inJustDecodeBounds = false // Decode the actual bitmap
-
-                return@withContext BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size, options)
-            } else {
-                return@withContext BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
             }
+
+            // Once the file is decrypted, load it as a Bitmap
+            return@withContext loadBitmapFromFile(decryptedFile, downscale)
+
         } catch (e: Exception) {
             Log.e("Decryption", "Error during decryption: ${e.message}")
             null
+        } finally {
+            if (decryptedFile.exists()) {
+                decryptedFile.delete()
+            }
         }
+    }
+
+    private fun loadBitmapFromFile(file: File, downscale: Boolean): Bitmap? {
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+            inPreferredConfig = Bitmap.Config.RGB_565
+        }
+
+        // Decode bounds first to get the image size
+        BitmapFactory.decodeFile(file.absolutePath, options)
+
+        // Optionally downscale the image to avoid OOM issues
+        if (downscale) {
+            options.inSampleSize = calculateInSampleSize(options, maxWidth = 200, maxHeight = 200)
+        }
+        options.inJustDecodeBounds = false
+
+        // Decode and return the actual Bitmap
+        return BitmapFactory.decodeFile(file.absolutePath, options)
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, maxWidth: Int, maxHeight: Int): Int {

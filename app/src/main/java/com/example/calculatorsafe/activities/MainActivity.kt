@@ -123,9 +123,7 @@ class MainActivity : AppCompatActivity() {
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d(TAG, "albumActivityResultLauncher: $result")
-            if (result.resultCode == Activity.RESULT_OK) {
-                albumAdapter.updateFromMetadata(this)
-            }
+            albumAdapter.updateFromMetadata(this)
         }
 
         mainRecyclerView.adapter = albumAdapter

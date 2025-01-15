@@ -139,7 +139,6 @@ class EncryptedImageAdapter(
             val file = encryptedFiles[position]
             val encryptedFileName = file.name
             val albumPath = file.parent ?: ""
-            //Log.e("Delete", "Deleting file: ${file.name} album path: $albumPath")
             if (file.exists() && file.delete()) {
                 removeFileFromMetadata(albumPath, encryptedFileName)
                 // Successfully deleted the file
