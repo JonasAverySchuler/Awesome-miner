@@ -107,12 +107,12 @@ class MainActivity : AppCompatActivity() {
                     intent.clipData?.let { clipData ->
                         for (i in 0 until clipData.itemCount) {
                             val uri = clipData.getItemAt(i).uri
-                            FileUtils.handleSelectedMedia(this, uri, targetAlbum!!, manageStoragePermissionLauncher)
+                            handleSelectedMedia(this, uri, targetAlbum!!)
                         }
                     } ?: run {
                         // Handle single selected file
                         intent.data?.let { uri ->
-                            handleSelectedMedia(this, uri, targetAlbum!!, manageStoragePermissionLauncher)
+                            handleSelectedMedia(this, uri, targetAlbum!!)
                         }
                     }
                 }

@@ -1,7 +1,6 @@
 package com.example.calculatorsafe.adapters
 
 import android.content.Context
-import android.graphics.Bitmap
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -12,14 +11,20 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.utils.EncryptionUtils
+import com.example.calculatorsafe.utils.EncryptionUtils.decryptImage
 import com.example.calculatorsafe.utils.FileUtils.removeFileFromMetadata
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class EncryptedImageAdapter(
     private val encryptedFiles: MutableList<File>,
     private val itemWidth: Int,
     private val onPhotoClick: (Int) -> Unit,
-    private val decryptFunction: (File) -> Bitmap?,
     private val onEnterSelectionMode: () -> Unit
 ) : RecyclerView.Adapter<EncryptedImageAdapter.PhotoViewHolder>() {
 
@@ -34,6 +39,8 @@ class EncryptedImageAdapter(
             notifyDataSetChanged()
         }
 
+    private val adapterScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     val selectedItems = mutableSetOf<Int>()
     var onSelectionChanged: (() -> Unit)? = null
 
@@ -43,8 +50,20 @@ class EncryptedImageAdapter(
         private val overlay: View = itemView.findViewById(R.id.overlay) // A semi-transparent View
 
         fun bind(file: File, position: Int, isSelected: Boolean) {
-            val decryptedBitmap = decryptFunction(file)
-            photoImageView.setImageBitmap(decryptedBitmap)
+
+            adapterScope.launch {
+                val decryptedBitmap = withContext(Dispatchers.IO) {
+                    decryptImage(file)
+                }
+                if (decryptedBitmap != null) {
+                    photoImageView.setImageBitmap(decryptedBitmap)
+                } else {
+                    // Handle the case where decryption failed //TODO: add error handling
+                    Log.e("EncryptedImageAdapter", "Decryption failed for file: ${file.name}")
+                }
+                //TODO: hide progressbar
+            }
+
             // Show or hide the selection overlay
             overlay.visibility = if (isSelected) View.VISIBLE else View.GONE
             itemView.setOnClickListener {
@@ -133,7 +152,7 @@ class EncryptedImageAdapter(
 
     fun moveSelectedFiles(destinationFolder: File) {
         val sortedSelectedItems = selectedItems.sortedDescending()
-
+        //TODO: shift metadata
         for (position in sortedSelectedItems) {
             val file = encryptedFiles[position]
             val destinationFile = File(destinationFolder, file.name)
@@ -158,20 +177,32 @@ class EncryptedImageAdapter(
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
     }
 
-
     fun restoreSelectedFiles(context: Context) {
         val sortedSelectedItems = selectedItems.sortedDescending()
-        for (position in sortedSelectedItems) {
-            val file = encryptedFiles[position]
-            if (file.exists() && EncryptionUtils.restorePhotoToDevice(file, context)) {
-                // Successfully restored the file
-                encryptedFiles.removeAt(position)  // Remove from the list
-                notifyItemRemoved(position)  // Notify the RecyclerView to update
-            } else {
-                // Handle failure if necessary, e.g., show a message to the user
-                Log.e("Restore", "Failed to restore file: ${file.name}")
+
+        adapterScope.launch {
+            for (position in sortedSelectedItems) {
+                val file = encryptedFiles[position]
+
+                val success = withContext(Dispatchers.IO) {
+                    if (file.exists()) {
+                        EncryptionUtils.restorePhotoToDevice(file, context)
+                    } else {
+                        false
+                    }
+                }
+
+                if (success) {
+                    // Successfully restored the file
+                    encryptedFiles.removeAt(position) // Remove from the list
+                    notifyItemRemoved(position) // Notify the RecyclerView to update
+                } else {
+                    // Handle failure if necessary, e.g., show a message to the user
+                    Log.e("Restore", "Failed to restore file: ${file.name}")
+                }
             }
         }
+
         selectedItems.clear()
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
     }
@@ -183,4 +214,8 @@ class EncryptedImageAdapter(
     }
 
     override fun getItemCount(): Int = encryptedFiles.size
+
+    fun cleanup() {
+        adapterScope.cancel()
+    }
 }

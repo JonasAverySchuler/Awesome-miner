@@ -1,13 +1,16 @@
 package com.example.calculatorsafe.adapters
 
 import android.net.Uri
-import android.util.Log
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.utils.EncryptionUtils.decryptImage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.io.File
 
 // Data class to represent image or video
@@ -20,6 +23,8 @@ class MediaPagerAdapter(
     private val mediaItems: MutableList<MediaItemWrapper>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    private val adapterScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+
     companion object {
         const val TAG = "MediaPagerAdapter"
         const val TYPE_IMAGE = 0
@@ -31,10 +36,16 @@ class MediaPagerAdapter(
 
         fun bind(imagePath: String) {
             // Decrypt and display the image
-            Log.e(TAG, "Image path bind: $imagePath")
             val encryptedFile = File(imagePath)
-            val bitmap = decryptImage(encryptedFile)
-            imageView.setImageBitmap(bitmap)
+
+            adapterScope.launch {
+                val decryptedBitmap = decryptImage(encryptedFile, false)
+                if (decryptedBitmap != null) {
+                    imageView.setImageBitmap(decryptedBitmap)
+                } else {
+                    //TODO: add error handling
+                }
+            }
         }
     }
 

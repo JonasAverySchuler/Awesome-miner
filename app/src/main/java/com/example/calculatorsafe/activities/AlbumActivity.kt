@@ -24,7 +24,6 @@ import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PermissionHelper.checkAndRequestPermissions
 import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
-import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.utils.FileUtils.accessUserImages
 import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
@@ -84,8 +83,7 @@ class AlbumActivity : AppCompatActivity() {
             itemWidth,
             { index ->
                 openMediaViewActivity(index)
-            },
-            { file -> EncryptionUtils.decryptImage(file) }
+            }
         ) {
             enterSelectionMode()
         }.apply {
@@ -130,13 +128,13 @@ class AlbumActivity : AppCompatActivity() {
                     intent.clipData?.let { clipData ->
                         for (i in 0 until clipData.itemCount) {
                             val uri = clipData.getItemAt(i).uri
-                            val newFilePath = FileUtils.handleSelectedMedia(this, uri, album, manageStoragePermissionLauncher)
+                            val newFilePath = FileUtils.handleSelectedMedia(this, uri, album)
                             adapter.addFile(File(newFilePath))
                         }
                     } ?: run {
                         // Handle single selected file
                         intent.data?.let { uri ->
-                            val newFilePath = FileUtils.handleSelectedMedia(this, uri, album, manageStoragePermissionLauncher)
+                            val newFilePath = FileUtils.handleSelectedMedia(this, uri, album)
                             adapter.addFile(File(newFilePath))
                         }
                     }
@@ -170,6 +168,11 @@ class AlbumActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_album, menu)  // R.menu.menu_album is your XML menu file
         return true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        adapter.cleanup()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

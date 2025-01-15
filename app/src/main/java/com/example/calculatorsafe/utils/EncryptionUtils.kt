@@ -11,6 +11,8 @@ import android.provider.MediaStore
 import android.util.Log
 import com.example.calculatorsafe.data.Album
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -46,12 +48,7 @@ object EncryptionUtils {
         return iv + encryptedData
     }
 
-    fun saveEncryptedImageToStorage(
-        context: Context,
-        encryptedImage: ByteArray,
-        targetAlbum: Album?,
-        encryptedFileName: String,
-    ): String {
+    fun saveEncryptedImageToStorage(context: Context, encryptedImage: ByteArray, targetAlbum: Album?, encryptedFileName: String, ): String {
         val albumsDir = getAlbumsDir(context)
         if (!albumsDir.exists()) {
             albumsDir.mkdirs() // Create the albums directory if it doesn't exist
@@ -115,46 +112,82 @@ object EncryptionUtils {
         }
     }
 
-
-    fun decryptImage(file: File): Bitmap? {
+    suspend fun decryptImage(file: File, downscale: Boolean = true): Bitmap? = withContext(Dispatchers.IO) {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
         val iv = ByteArray(16) // 16 bytes for the IV
 
-        // Read the IV
-        file.inputStream().use { inputStream ->
-            val bytesRead = inputStream.read(iv)
-            if (bytesRead != 16) {
-                throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
-            }
-        }
-
-        // Read the encrypted data
-        val encryptedData = file.inputStream().use { inputStream ->
-            inputStream.skip(16) // Skip the IV
-            inputStream.readBytes()
-        }
-
-        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        val ivSpec = IvParameterSpec(iv)
-
-        // Initialize cipher
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
-
         try {
-            // Perform decryption
+            // Read the IV
+            file.inputStream().use { inputStream ->
+                val bytesRead = inputStream.read(iv)
+                if (bytesRead != 16) {
+                    throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
+                }
+            }
+
+            // Stream and process encrypted data in chunks
+            val encryptedData = ByteArrayOutputStream().use { outputStream ->
+                file.inputStream().use { inputStream ->
+                    inputStream.skip(16) // Skip the IV
+                    val buffer = ByteArray(8192) // 8 KB buffer
+                    var bytesRead: Int
+                    while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                        outputStream.write(buffer, 0, bytesRead)
+                    }
+                }
+                outputStream.toByteArray()
+            }
+
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            val ivSpec = IvParameterSpec(iv)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+
+            //TODO: make sure for huge files to do this in a buffer to avoid too much memory use
             val decryptedData = cipher.doFinal(encryptedData)
 
-            // Check if decrypted data is empty
             if (decryptedData.isEmpty()) {
                 throw IllegalArgumentException("Decrypted data is empty.")
             }
 
-            // Return the bitmap
-            return BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
+            if(downscale) {
+                // Decode and scale down the bitmap to prevent OOM
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true // Decode only bounds to get image dimensions
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+
+                BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size, options)
+
+                // Calculate inSampleSize to scale down the image if necessary
+                options.inSampleSize = calculateInSampleSize(options, maxWidth = 100, maxHeight = 100)
+                options.inJustDecodeBounds = false // Decode the actual bitmap
+
+                return@withContext BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size, options)
+            } else {
+                return@withContext BitmapFactory.decodeByteArray(decryptedData, 0, decryptedData.size)
+            }
         } catch (e: Exception) {
             Log.e("Decryption", "Error during decryption: ${e.message}")
-            return null
+            null
         }
+    }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, maxWidth: Int, maxHeight: Int): Int {
+        val (height: Int, width: Int) = options.outHeight to options.outWidth
+        var inSampleSize = 4
+
+        if (height > maxHeight || width > maxWidth) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
+
+            // Calculate the largest inSampleSize value that is a power of 2
+            // and keeps both height and width larger than the requested max dimensions.
+            while (halfHeight / inSampleSize >= maxHeight && halfWidth / inSampleSize >= maxWidth) {
+                inSampleSize *= 2
+            }
+        }
+
+        return inSampleSize
     }
 
     fun getBitmapFromUri(contentResolver: ContentResolver, uri: Uri): Bitmap? {
@@ -189,7 +222,7 @@ object EncryptionUtils {
         }
     }
 
-    fun restorePhotoToDevice(file: File, context: Context): Boolean {
+    suspend fun restorePhotoToDevice(file: File, context: Context): Boolean {
         val decryptedBitmap = decryptImage(file)
         val restoredFile = saveBitmapToFile(decryptedBitmap, "restored_img_${System.currentTimeMillis()}.jpg", context) ?: return false
 

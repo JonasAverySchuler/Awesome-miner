@@ -242,7 +242,7 @@ object FileUtils {
     }
 
     //Returns filepath of new file
-    fun handleSelectedMedia(context: Context, mediaUri: Uri, targetAlbum: Album, manageStoragePermissionLauncher: ActivityResultLauncher<Intent>): String {
+    fun handleSelectedMedia(context: Context, mediaUri: Uri, targetAlbum: Album): String {
         try {
             // Step 1: Get Bitmap from URI
             val contentResolver = context.contentResolver
