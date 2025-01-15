@@ -184,44 +184,64 @@ class AlbumActivity : AppCompatActivity() {
             }
             R.id.action_delete -> {
                 // Handle delete action
-                if (adapter.selectedItems.isNotEmpty()) {
-                    DialogHelper.showConfirmationDialog(this, "Delete Files",
-                        "Are you sure you want to delete the selected files?","Confirm", "Cancel",
-                        { adapter.deleteSelectedFiles()
-                            exitSelectionMode()},
-                        {})
+                when (adapter.mode) {
+                    EncryptedImageAdapter.Mode.SELECTION -> {
+                        if (adapter.selectedItems.isNotEmpty()) {
+                            DialogHelper.showConfirmationDialog(this, "Delete Files",
+                                "Are you sure you want to delete the selected files?","Confirm", "Cancel",
+                                { adapter.deleteSelectedFiles()
+                                    exitSelectionMode()},
+                                {})
+                        }
+                    }
+                    EncryptedImageAdapter.Mode.VIEWING -> {
+                        enterSelectionMode()
+                    }
                 }
+
                 true
             }
             R.id.action_move -> {
                 // Handle delete action
-                if (adapter.selectedItems.isNotEmpty()) {
-
-                    val albums = getAlbums(this).toMutableList()
-                    val albumsNew = albums.filter { it.pathString != album.pathString } //dont show current album as an option
-                    if (albumsNew.isEmpty()) {
-                        Toast.makeText(this, "No other albums found to move media", Toast.LENGTH_SHORT).show()
-                    } else {
-                        DialogHelper.chooseAlbumDialog(
-                            this,
-                            albumsNew,
-                            "Choose an Album to move media",
-                        ) { album ->
-                            adapter.moveSelectedFiles(File(album.pathString))
-                            exitSelectionMode()
+                when (adapter.mode) {
+                    EncryptedImageAdapter.Mode.SELECTION -> {
+                        if (adapter.selectedItems.isNotEmpty()) {
+                            val albums = getAlbums(this).toMutableList()
+                            val albumsNew = albums.filter { it.pathString != album.pathString } //dont show current album as an option
+                            if (albumsNew.isEmpty()) {
+                                Toast.makeText(this, "No other albums found to move media", Toast.LENGTH_SHORT).show()
+                            } else {
+                                DialogHelper.chooseAlbumDialog(
+                                    this,
+                                    albumsNew,
+                                    "Choose an Album to move media",
+                                ) { album ->
+                                    adapter.moveSelectedFiles(File(album.pathString))
+                                    exitSelectionMode()
+                                }
+                            }
                         }
-
+                    }
+                    EncryptedImageAdapter.Mode.VIEWING -> {
+                        enterSelectionMode()
                     }
                 }
                 true
             }
             R.id.action_restore -> {
-                if (adapter.selectedItems.isNotEmpty()) {
-                    DialogHelper.showConfirmationDialog(this, "Restore Files",
-                        "Are you sure you want to restore the selected files?","Confirm", "Cancel",
-                        { adapter.restoreSelectedFiles(this)
-                            exitSelectionMode()  // Exit selection mode after deletion},
-                        })
+                when (adapter.mode) {
+                    EncryptedImageAdapter.Mode.SELECTION -> {
+                        if (adapter.selectedItems.isNotEmpty()) {
+                            DialogHelper.showConfirmationDialog(this, "Restore Files",
+                                "Are you sure you want to restore the selected files?","Confirm", "Cancel",
+                                { adapter.restoreSelectedFiles(this)
+                                    exitSelectionMode()  // Exit selection mode after deletion},
+                                })
+                        }
+                    }
+                    EncryptedImageAdapter.Mode.VIEWING -> {
+                        enterSelectionMode()
+                    }
                 }
                 true
             }

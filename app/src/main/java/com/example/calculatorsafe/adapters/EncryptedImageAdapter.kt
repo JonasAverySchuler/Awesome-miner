@@ -46,7 +46,9 @@ class EncryptedImageAdapter(
                     // Clear the selected items
                     notifySelectedItemsChanged()
                 }
-                Mode.SELECTION -> {}
+                Mode.SELECTION -> {
+
+                }
             }
         }
 
@@ -167,8 +169,8 @@ class EncryptedImageAdapter(
             if (file.exists() && file.delete()) {
                 removeFileFromMetadata(albumPath, encryptedFileName)
                 // Successfully deleted the file
-                encryptedFiles.removeAt(position)  // Remove from the list
                 decryptedBitmaps.remove(file.name) // Remove from the cache
+                encryptedFiles.removeAt(position)  // Remove from the list
 
                 notifyItemRemoved(position)  // Notify the RecyclerView to update
             } else {
@@ -221,8 +223,8 @@ class EncryptedImageAdapter(
 
         // Update adapter state
         for (position in sortedSelectedItems) {
-            encryptedFiles.removeAt(position) // Remove from the current list
             decryptedBitmaps.remove(encryptedFiles[position].name) // Remove from the cache
+            encryptedFiles.removeAt(position) // Remove from the current list
             notifyItemRemoved(position)
         }
 
@@ -249,6 +251,7 @@ class EncryptedImageAdapter(
 
                 if (success) {
                     // Successfully restored the file
+                    decryptedBitmaps.remove(file.name) // Remove from the cache
                     encryptedFiles.removeAt(position) // Remove from the list
                     notifyItemRemoved(position) // Notify the RecyclerView to update
                 } else {
