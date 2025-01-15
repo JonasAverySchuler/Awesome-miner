@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager
@@ -48,20 +49,22 @@ class EncryptedImageAdapter(
         private val cardView: CardView = view.findViewById(R.id.card_view)
         private val photoImageView: ImageView = view.findViewById(R.id.photo_image_view)
         private val overlay: View = itemView.findViewById(R.id.overlay) // A semi-transparent View
+        private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar) // A ProgressBar
 
         fun bind(file: File, position: Int, isSelected: Boolean) {
 
             adapterScope.launch {
+                progressBar.visibility = View.VISIBLE
                 val decryptedBitmap = withContext(Dispatchers.IO) {
                     decryptImage(file)
                 }
+                progressBar.visibility = View.GONE
                 if (decryptedBitmap != null) {
                     photoImageView.setImageBitmap(decryptedBitmap)
                 } else {
                     // Handle the case where decryption failed //TODO: add error handling
                     Log.e("EncryptedImageAdapter", "Decryption failed for file: ${file.name}")
                 }
-                //TODO: hide progressbar
             }
 
             // Show or hide the selection overlay

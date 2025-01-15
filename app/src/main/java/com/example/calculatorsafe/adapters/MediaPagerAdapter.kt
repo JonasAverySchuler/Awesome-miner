@@ -1,8 +1,12 @@
 package com.example.calculatorsafe.adapters
 
 import android.net.Uri
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.ProgressBar
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
@@ -31,15 +35,18 @@ class MediaPagerAdapter(
         const val TYPE_VIDEO = 1
     }
 
-    inner class ImageViewHolder(itemView: ImageView) : RecyclerView.ViewHolder(itemView) {
-        private val imageView = itemView as ImageView
+    inner class ImageViewHolder(itemView: View, private val imageView: ImageView, private val progressBar: ProgressBar) : RecyclerView.ViewHolder(itemView) {
 
         fun bind(imagePath: String) {
             // Decrypt and display the image
             val encryptedFile = File(imagePath)
+            progressBar.visibility = View.VISIBLE
+            imageView.visibility = View.GONE
 
             adapterScope.launch {
                 val decryptedBitmap = decryptImage(encryptedFile, false)
+                progressBar.visibility = View.GONE
+                imageView.visibility = View.VISIBLE
                 if (decryptedBitmap != null) {
                     imageView.setImageBitmap(decryptedBitmap)
                 } else {
@@ -79,14 +86,40 @@ class MediaPagerAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return when (viewType) {
             TYPE_IMAGE -> {
-                val imageView = ImageView(parent.context).apply {
+                // Create a FrameLayout to hold both the ImageView and ProgressBar
+                val frameLayout = FrameLayout(parent.context).apply {
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
+                }
+
+                // Create and configure the ImageView
+                val imageView = ImageView(parent.context).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    )
                     scaleType = ImageView.ScaleType.FIT_CENTER
                 }
-                ImageViewHolder(imageView)
+
+                // Create and configure the ProgressBar
+                val progressBar = ProgressBar(parent.context).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        gravity = Gravity.CENTER // Center the ProgressBar in the FrameLayout
+                    }
+                    visibility = View.GONE // Initially hide the ProgressBar
+                    isIndeterminate = true
+                }
+
+                // Add ImageView and ProgressBar to the FrameLayout
+                frameLayout.addView(imageView)
+                frameLayout.addView(progressBar)
+
+                ImageViewHolder(frameLayout, imageView, progressBar)
             }
             TYPE_VIDEO -> {
                 val playerView = PlayerView(parent.context).apply {
