@@ -55,6 +55,10 @@ class EncryptedImageAdapter(
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progress_bar) // A ProgressBar
 
         fun bind(file: File, position: Int, isSelected: Boolean) {
+            progressBar.visibility = View.GONE
+            // Show or hide the selection overlay
+            overlay.visibility = if (isSelected) View.VISIBLE else View.GONE
+            photoImageView.setImageDrawable(null) // Clear any previous image
 
             adapterScope.launch {
                 progressBar.visibility = View.VISIBLE
@@ -70,8 +74,6 @@ class EncryptedImageAdapter(
                 }
             }
 
-            // Show or hide the selection overlay
-            overlay.visibility = if (isSelected) View.VISIBLE else View.GONE
             itemView.setOnClickListener {
                 when (mode) {
                     Mode.VIEWING -> {

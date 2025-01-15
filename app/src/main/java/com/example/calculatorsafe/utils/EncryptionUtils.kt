@@ -139,7 +139,7 @@ object EncryptionUtils {
 
             // Use a CipherInputStream to decrypt in chunks and write to a file
             FileOutputStream(decryptedFile).use { outputStream ->
-                val buffer = ByteArray(64 * 1024) // 64 KB buffer
+                val buffer = ByteArray(16 * 1024) // 16 KB buffer
                 file.inputStream().use { inputStream ->
                     inputStream.skip(16) // Skip the IV
                     val cipherInputStream = CipherInputStream(inputStream, cipher)
