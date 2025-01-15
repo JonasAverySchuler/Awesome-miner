@@ -1,6 +1,7 @@
 package com.example.calculatorsafe.adapters
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -50,8 +51,8 @@ class EncryptedImageAdapter(
         }
 
     private val adapterScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
     val selectedItems = mutableSetOf<Int>()
+    private val decryptedBitmaps = mutableMapOf<String, Bitmap?>()  // Cache decrypted bitmaps by position
     var onSelectionChanged: (() -> Unit)? = null
 
     inner class PhotoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -66,18 +67,23 @@ class EncryptedImageAdapter(
             overlay.visibility = if (isSelected) View.VISIBLE else View.GONE
             photoImageView.setImageDrawable(null) // Clear any previous image
 
-            adapterScope.launch {
-                progressBar.visibility = View.VISIBLE
-                val decryptedBitmap = withContext(Dispatchers.IO) {
-                    decryptImage(file)
+            if(decryptedBitmaps[file.name] == null) {
+                adapterScope.launch {
+                    progressBar.visibility = View.VISIBLE
+                    val decryptedBitmap = withContext(Dispatchers.IO) {
+                        decryptImage(file)
+                    }
+                    progressBar.visibility = View.GONE
+                    if (decryptedBitmap != null) {
+                        decryptedBitmaps[file.name] = decryptedBitmap // Cache the decrypted bitmap
+                        photoImageView.setImageBitmap(decryptedBitmap)
+                    } else {
+                        // Handle the case where decryption failed //TODO: add error handling
+                        Log.e("EncryptedImageAdapter", "Decryption failed for file: ${file.name}")
+                    }
                 }
-                progressBar.visibility = View.GONE
-                if (decryptedBitmap != null) {
-                    photoImageView.setImageBitmap(decryptedBitmap)
-                } else {
-                    // Handle the case where decryption failed //TODO: add error handling
-                    Log.e("EncryptedImageAdapter", "Decryption failed for file: ${file.name}")
-                }
+            } else {
+                photoImageView.setImageBitmap(decryptedBitmaps[file.name])
             }
 
             itemView.setOnClickListener {
@@ -162,6 +168,8 @@ class EncryptedImageAdapter(
                 removeFileFromMetadata(albumPath, encryptedFileName)
                 // Successfully deleted the file
                 encryptedFiles.removeAt(position)  // Remove from the list
+                decryptedBitmaps.remove(file.name) // Remove from the cache
+
                 notifyItemRemoved(position)  // Notify the RecyclerView to update
             } else {
                 // Handle failure if necessary, e.g., show a message to the user
@@ -214,6 +222,7 @@ class EncryptedImageAdapter(
         // Update adapter state
         for (position in sortedSelectedItems) {
             encryptedFiles.removeAt(position) // Remove from the current list
+            decryptedBitmaps.remove(encryptedFiles[position].name) // Remove from the cache
             notifyItemRemoved(position)
         }
 
