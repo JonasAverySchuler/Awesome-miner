@@ -248,7 +248,6 @@ class AlbumActivity : AppCompatActivity() {
 
     private fun exitSelectionMode() {
         adapter.mode = EncryptedImageAdapter.Mode.VIEWING
-        adapter.selectedItems.clear()
         selectionModeCallback.isEnabled = false
         toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.back)
         toolbar.setNavigationOnClickListener {

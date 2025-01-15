@@ -40,7 +40,13 @@ class EncryptedImageAdapter(
     var mode = Mode.VIEWING
         set(value) {
             field = value
-            notifyDataSetChanged()
+            when (value) {
+                Mode.VIEWING -> {
+                    // Clear the selected items
+                    notifySelectedItemsChanged()
+                }
+                Mode.SELECTION -> {}
+            }
         }
 
     private val adapterScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -114,6 +120,14 @@ class EncryptedImageAdapter(
         holder.setItemWidth(itemWidth)
         val encryptedFile = encryptedFiles[position]
         holder.bind(encryptedFile, position, selectedItems.contains(position))
+    }
+
+    private fun notifySelectedItemsChanged() {
+        // Notify the affected items (selected items) that their state has changed
+        selectedItems.forEach { position ->
+            notifyItemChanged(position)
+        }
+        selectedItems.clear()
     }
 
     fun toggleSelection(position: Int) {
