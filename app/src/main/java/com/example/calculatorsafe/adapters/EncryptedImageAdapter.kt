@@ -52,6 +52,8 @@ class EncryptedImageAdapter(
             }
         }
 
+    var onImageCountUpdated: ((Int) -> Unit)? = null
+
     private val adapterScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     val selectedItems = mutableSetOf<Int>()
     private val decryptedBitmaps = mutableMapOf<String, Bitmap?>()  // Cache decrypted bitmaps by position
@@ -259,6 +261,7 @@ class EncryptedImageAdapter(
                     Log.e("Restore", "Failed to restore file: ${file.name}")
                 }
             }
+            onImageCountUpdated?.invoke(encryptedFiles.size)
         }
 
         selectedItems.clear()

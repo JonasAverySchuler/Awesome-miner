@@ -93,6 +93,9 @@ class AlbumActivity : AppCompatActivity() {
         }
 
         albumRecyclerView.adapter = adapter
+        adapter.onImageCountUpdated = { count ->
+            toolbar.subtitle = "$count images"
+        }
 
         toolbar.setNavigationOnClickListener {
             if (selectionModeCallback.isEnabled) {
