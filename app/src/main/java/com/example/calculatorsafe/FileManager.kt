@@ -15,17 +15,9 @@ object FileManager {
         filePaths.addAll(paths)
     }
 
-    // Retrieve all file paths
     fun getFilePaths(): List<String> = filePaths
 
-    // Get a specific file path by index
-    fun getFilePath(index: Int): String? = filePaths.getOrNull(index)
-
-    // Size of the file paths list
-    fun getSize(): Int = filePaths.size
-
     fun getAlbums(context: Context): List<Album> {
-        // Get the directory where albums are stored (adjust path as necessary)
         val albumsDir = File(context.filesDir, "Albums") // Or wherever your albums are stored
 
         // Get the directories inside the albumsDir (only directories are albums)
@@ -57,11 +49,9 @@ object FileManager {
                     pathString = dir.absolutePath
                 )
             }
-
             album
         }
     }
-
 
     // Helper function to get the number of image files in an album directory
     private fun getImageFileCountFromAlbum(albumDir: File): Int {
@@ -71,5 +61,4 @@ object FileManager {
         }
         return imageFiles?.size ?: 0
     }
-
 }

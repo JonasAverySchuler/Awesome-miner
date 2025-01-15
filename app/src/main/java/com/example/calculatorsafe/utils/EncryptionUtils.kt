@@ -10,6 +10,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import com.example.calculatorsafe.data.Album
+import com.example.calculatorsafe.data.FileDetail
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -246,7 +247,7 @@ object EncryptionUtils {
             val metadata = if (metadataFile.exists()) {
                 gson.fromJson(metadataFile.readText(), FileUtils.Metadata::class.java)
             } else {
-                FileUtils.Metadata(albumName = albumDir.name, files = emptyList())
+                FileUtils.Metadata(albumName = albumDir.name, files = emptyList<FileDetail>().toMutableList())
             }
 
             // Find the file in the metadata and retrieve the original name
@@ -275,7 +276,7 @@ object EncryptionUtils {
 
                 // Step 3: Remove the file from metadata and save
                 val updatedFiles = metadata.files.filterNot { it.encryptedFileName == file.name }
-                metadata.files = updatedFiles
+                metadata.files = updatedFiles.toMutableList()
 
                 // Save the updated metadata
                 metadataFile.writeText(gson.toJson(metadata))

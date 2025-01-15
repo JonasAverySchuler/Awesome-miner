@@ -29,7 +29,7 @@ object FileUtils {
     data class Metadata(
         @SerializedName("album_name")
         val albumName: String,
-        var files: List<FileDetail>
+        var files: MutableList<FileDetail>
     )
 
     fun isImageFile(file: File): Boolean {
@@ -90,6 +90,56 @@ object FileUtils {
         fileDetails.add(newFileDetail)
         createOrUpdateMetadataFile(albumPath, fileDetails)
     }
+
+    fun moveFilesAndUpdateMetadata(
+        sourceAlbumPath: String,
+        targetAlbumPath: String,
+        filesToMove: List<FileDetail>
+    ) {
+        val sourceMetadataFile = File(sourceAlbumPath, "metadata.json")
+        val targetMetadataFile = File(targetAlbumPath, "metadata.json")
+
+        // Load metadata from source and target
+        val sourceMetadata = if (sourceMetadataFile.exists()) {
+            Gson().fromJson(sourceMetadataFile.readText(), Metadata::class.java)
+        } else {
+            Metadata(albumName = File(sourceAlbumPath).name, files = mutableListOf())
+        }
+
+        val targetMetadata = if (targetMetadataFile.exists()) {
+            Gson().fromJson(targetMetadataFile.readText(), Metadata::class.java)
+        } else {
+            Metadata(albumName = File(targetAlbumPath).name, files = mutableListOf())
+        }
+
+        // Move files and update metadata
+        val movedFiles = mutableListOf<FileDetail>()
+
+        for (fileDetail in filesToMove) {
+            val sourceFile = File(sourceAlbumPath, fileDetail.encryptedFileName)
+            val targetFile = File(targetAlbumPath, fileDetail.encryptedFileName)
+
+            if (sourceFile.exists() && sourceFile.renameTo(targetFile)) {
+                movedFiles.add(fileDetail)
+                Log.d("FileMove", "Moved file: ${fileDetail.encryptedFileName}")
+            } else {
+                Log.e("FileMove", "Failed to move file: ${fileDetail.encryptedFileName}")
+            }
+        }
+
+        // Update source metadata
+        sourceMetadata.files.removeAll { fileDetail ->
+            movedFiles.any { it.encryptedFileName == fileDetail.encryptedFileName }
+        }
+        sourceMetadataFile.writeText(Gson().toJson(sourceMetadata))
+
+        // Update target metadata
+        targetMetadata.files.addAll(movedFiles)
+        targetMetadataFile.writeText(Gson().toJson(targetMetadata))
+
+        Log.d("FileMove", "Metadata updated successfully.")
+    }
+
 
     fun removeFileFromMetadata(albumPath: String, encryptedName: String) {
         val fileDetails = readMetadataFile(albumPath).toMutableList()

@@ -11,9 +11,12 @@ import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
+import com.example.calculatorsafe.data.FileDetail
 import com.example.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.utils.EncryptionUtils.decryptImage
+import com.example.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.utils.FileUtils.removeFileFromMetadata
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -153,30 +156,55 @@ class EncryptedImageAdapter(
     }
 
     fun moveSelectedFiles(destinationFolder: File) {
+        // Read metadata from the current album
+        val sourceAlbumPath = encryptedFiles[0].parent!!
+        val metadataFile = File(sourceAlbumPath, "metadata.json")
+        if (!metadataFile.exists()) {
+            Log.e("Move", "Metadata file not found. Cannot move files.")
+            return
+        }
+
+        // Parse metadata to extract file details
+        val gson = Gson()
+        val metadata = gson.fromJson(metadataFile.readText(), FileUtils.Metadata::class.java)
+        val fileDetailsToMove = mutableListOf<FileDetail>()
+
         val sortedSelectedItems = selectedItems.sortedDescending()
-        //TODO: shift metadata
         for (position in sortedSelectedItems) {
             val file = encryptedFiles[position]
-            val destinationFile = File(destinationFolder, file.name)
 
-            // Move the file
-            if (file.exists() && file.renameTo(destinationFile)) {
-                // Successfully moved the file
-                encryptedFiles.removeAt(position)  // Remove from the current list
-                notifyItemRemoved(position)
-
-                // Optionally, add the moved file to a new list (if applicable)
-                // encryptedFiles.add(destinationFile)
-
-                Log.d("Move", "Successfully moved file: ${file.name}")
+            // Find the corresponding metadata entry for the selected file
+            val metadataEntry = metadata.files.find { it.encryptedFileName == file.name }
+            if (metadataEntry != null) {
+                val fileDetail = FileDetail(
+                    originalFileName = metadataEntry.originalFileName,
+                    encryptedFileName = metadataEntry.encryptedFileName,
+                    mimeType = metadataEntry.mimeType,
+                    createdAt = metadataEntry.createdAt
+                )
+                fileDetailsToMove.add(fileDetail)
             } else {
-                // Handle failure if necessary, e.g., show a message to the user
-                Log.e("Move", "Failed to move file: ${file.name}")
+                Log.e("Move", "Metadata entry not found for file: ${file.name}")
             }
         }
 
-        selectedItems.clear()  // Clear the selection after moving the files
+        // Move files and update metadata
+        FileUtils.moveFilesAndUpdateMetadata(
+            sourceAlbumPath = sourceAlbumPath,
+            targetAlbumPath = destinationFolder.absolutePath,
+            filesToMove = fileDetailsToMove
+        )
+
+        // Update adapter state
+        for (position in sortedSelectedItems) {
+            encryptedFiles.removeAt(position) // Remove from the current list
+            notifyItemRemoved(position)
+        }
+
+        selectedItems.clear() // Clear selection
         FileManager.setFilePaths(encryptedFiles.map { it.absolutePath })
+
+        Log.d("Move", "Files moved and metadata updated.")
     }
 
     fun restoreSelectedFiles(context: Context) {

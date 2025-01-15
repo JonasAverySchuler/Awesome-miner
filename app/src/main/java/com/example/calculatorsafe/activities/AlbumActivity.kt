@@ -198,7 +198,7 @@ class AlbumActivity : AppCompatActivity() {
                 if (adapter.selectedItems.isNotEmpty()) {
 
                     val albums = getAlbums(this).toMutableList()
-                    val albumsNew = albums.filter { it.albumID != album.albumID } //dont show current album as an option
+                    val albumsNew = albums.filter { it.pathString != album.pathString } //dont show current album as an option
                     if (albumsNew.isEmpty()) {
                         Toast.makeText(this, "No other albums found to move media", Toast.LENGTH_SHORT).show()
                     } else {

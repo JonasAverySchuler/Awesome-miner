@@ -21,6 +21,7 @@ import com.example.calculatorsafe.FileManager.getAlbums
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.AlbumAdapter
 import com.example.calculatorsafe.data.Album
+import com.example.calculatorsafe.data.FileDetail
 import com.example.calculatorsafe.helpers.DialogHelper
 import com.example.calculatorsafe.helpers.PermissionHelper
 import com.example.calculatorsafe.helpers.PermissionHelper.REQUEST_CODE_READ_MEDIA
@@ -122,7 +123,6 @@ class MainActivity : AppCompatActivity() {
 
         // Register the ActivityResultLauncher
         albumActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            Log.d(TAG, "albumActivityResultLauncher: $result")
             albumAdapter.updateFromMetadata(this)
         }
 
@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity() {
                 val metadataFile = File(albumDir, "metadata.json")
                 val metadata = FileUtils.Metadata(
                     albumName = albumName,
-                    files = emptyList()  // Start with an empty list of files
+                    files = emptyList<FileDetail>().toMutableList()
                 )
                 metadataFile.writeText(Gson().toJson(metadata))
 
