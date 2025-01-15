@@ -31,26 +31,47 @@ object EncryptionUtils {
         return File(context.filesDir, "Albums")
     }
 
-    fun encryptImage(bitmap: Bitmap?): ByteArray {
+    fun encryptImage(bitmap: Bitmap?): ByteArray? {
         val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+
+        // Early return if the bitmap is null
         if (bitmap == null) {
             Log.e("Encryption", "Bitmap is null")
+            return null
         }
 
+        // Compress the bitmap into a byte array
         val byteArrayOutputStream = ByteArrayOutputStream()
-        bitmap?.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream)
         val byteArray = byteArrayOutputStream.toByteArray()
 
-        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+        // Check if the byte array is valid and non-empty
+        if (byteArray.isEmpty()) {
+            Log.e("Encryption", "Compressed byte array is empty")
+            return null
+        }
 
-        val iv = cipher.iv
-        val encryptedData = cipher.doFinal(byteArray)
+        try {
+            // Initialize the cipher for AES in CBC mode with PKCS7 padding
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
 
-        return iv + encryptedData
+            // Generate the IV from the cipher
+            val iv = cipher.iv
+
+            // Encrypt the byte array
+            val encryptedData = cipher.doFinal(byteArray)
+
+            // Return the IV + encrypted data
+            return iv + encryptedData
+
+        } catch (e: Exception) {
+            Log.e("Encryption", "Error during encryption: ${e.message}")
+            return null
+        }
     }
 
-    fun saveEncryptedImageToStorage(context: Context, encryptedImage: ByteArray, targetAlbum: Album?, encryptedFileName: String, ): String {
+    fun saveEncryptedImageToStorage(context: Context, encryptedImage: ByteArray, targetAlbum: Album?, encryptedFileName: String): String {
         val albumsDir = getAlbumsDir(context)
         if (!albumsDir.exists()) {
             albumsDir.mkdirs() // Create the albums directory if it doesn't exist

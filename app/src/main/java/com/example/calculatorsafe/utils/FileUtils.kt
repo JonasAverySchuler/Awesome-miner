@@ -304,6 +304,10 @@ object FileUtils {
 
             // Step 2: Encrypt the Image
             val encryptedImage = EncryptionUtils.encryptImage(bitmap)
+            if (encryptedImage == null) {
+                Log.e("MediaHandler", "Failed to encrypt image")
+                return ""
+            }
 
             // Step 3: Retrieve File Name and MIME Type
             val originalFileName = getFileNameFromUri(context, mediaUri) ?: "unknown_${System.currentTimeMillis()}.jpg"
