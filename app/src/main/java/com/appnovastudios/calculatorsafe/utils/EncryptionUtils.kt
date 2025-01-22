@@ -255,7 +255,7 @@ object EncryptionUtils {
     }
 
     suspend fun restorePhotoToDevice(file: File, context: Context): Boolean {
-        val decryptedBitmap = decryptImage(file)
+        val decryptedBitmap = decryptImage(file, downscale = false)
         val restoredFile = saveBitmapToFile(decryptedBitmap, "restored_img_${System.currentTimeMillis()}.jpg", context) ?: return false
 
         try {

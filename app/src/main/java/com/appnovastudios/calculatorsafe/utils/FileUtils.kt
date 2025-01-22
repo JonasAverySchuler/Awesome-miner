@@ -12,11 +12,11 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.net.toUri
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
 import com.appnovastudios.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
 import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.data.FileDetail
-import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import org.json.JSONArray
@@ -140,7 +140,6 @@ object FileUtils {
 
         Log.d("FileMove", "Metadata updated successfully.")
     }
-
 
     fun removeFileFromMetadata(albumPath: String, encryptedName: String) {
         val fileDetails = readMetadataFile(albumPath).toMutableList()
