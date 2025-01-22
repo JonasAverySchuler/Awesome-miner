@@ -39,11 +39,21 @@ object PermissionHelper {
 
         // Check if MANAGE_EXTERNAL_STORAGE is required and not granted
         if (!Environment.isExternalStorageManager()) {
-            Log.d(TAG, "Requesting MANAGE_EXTERNAL_STORAGE permission")
-            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                data = Uri.parse("package:${context.packageName}")
-            }
-            manageStoragePermissionLauncher.launch(intent)
+            DialogHelper.showConfirmationDialog(
+                context,
+                "Access Required",
+                "This app needs access to all files on your device to function properly, such as managing and organizing your files. " +
+                        "Please grant this permission in the next screen.",
+                "Proceed",
+                "Cancel",
+                {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                        data = Uri.parse("package:${context.packageName}")
+                    }
+                    manageStoragePermissionLauncher.launch(intent)
+                }
+            )
+
             return
         }
 
