@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.activities
+package com.appnovastudios.calculatorsafe.activities
 
 import android.content.Intent
 import android.os.Bundle
@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.calculatorsafe.BuildConfig
 import com.example.calculatorsafe.R
+import com.example.calculatorsafe.activities.PasscodeSetupActivity
 import com.example.calculatorsafe.helpers.PreferenceHelper
 import java.util.Locale
 import kotlin.math.pow

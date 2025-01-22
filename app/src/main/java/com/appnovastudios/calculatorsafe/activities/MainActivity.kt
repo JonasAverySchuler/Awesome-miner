@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.activities
+package com.appnovastudios.calculatorsafe.activities
 
 import android.app.Activity
 import android.content.Context
@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.calculatorsafe.FileManager.getAlbums
 import com.example.calculatorsafe.R
+import com.example.calculatorsafe.activities.AlbumActivity
+import com.example.calculatorsafe.activities.SettingsActivity
 import com.example.calculatorsafe.adapters.AlbumAdapter
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.data.FileDetail

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
@@ -323,9 +324,12 @@ object FileUtils {
             Log.d("MediaHandler", "File Path from getfilepathfromuri: $filePath")
 
             // Step 5: Delete Original Media if preference set
+
+            val isExternalStorageManager = Environment.isExternalStorageManager()
+            Log.e("MediaHandler", "isExternalStorageManager: $isExternalStorageManager")
+
             if (PreferenceHelper.getDeleteOriginal(context)) {
-                // Permission granted, proceed with your file operations
-                Log.d("Permission", "Permission granted")
+
                 if(!FileUtils.deleteFile(filePath)) {
                     Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
                 }
