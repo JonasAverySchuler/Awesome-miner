@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.utils
+package com.appnovastudios.calculatorsafe.utils
 
 import android.content.ContentResolver
 import android.content.ContentValues

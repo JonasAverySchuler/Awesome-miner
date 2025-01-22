@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.helpers
+package com.appnovastudios.calculatorsafe.helpers
 
 import android.app.Dialog
 import android.content.Context

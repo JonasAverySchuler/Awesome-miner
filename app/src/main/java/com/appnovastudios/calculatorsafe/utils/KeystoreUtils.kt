@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.utils
+package com.appnovastudios.calculatorsafe.utils
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties

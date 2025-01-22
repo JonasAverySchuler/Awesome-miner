@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.utils
+package com.appnovastudios.calculatorsafe.utils
 
 import android.content.Context
 import android.content.Intent
@@ -12,11 +12,11 @@ import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.core.net.toUri
+import com.appnovastudios.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
 import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.data.Album
 import com.example.calculatorsafe.data.FileDetail
-import com.example.calculatorsafe.helpers.PreferenceHelper
-import com.example.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import org.json.JSONArray
@@ -316,7 +316,12 @@ object FileUtils {
             val encryptedFileName = "enc_${System.currentTimeMillis()}"
 
             // Step 4: Save the Encrypted Image
-            val newFilePath = EncryptionUtils.saveEncryptedImageToStorage(context, encryptedImage,targetAlbum, encryptedFileName)
+            val newFilePath = EncryptionUtils.saveEncryptedImageToStorage(
+                context,
+                encryptedImage,
+                targetAlbum,
+                encryptedFileName
+            )
 
             Log.d("MediaHandler", "MediaUri: $mediaUri")
 
@@ -330,7 +335,7 @@ object FileUtils {
 
             if (PreferenceHelper.getDeleteOriginal(context)) {
 
-                if(!FileUtils.deleteFile(filePath)) {
+                if(!deleteFile(filePath)) {
                     Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
                 }
             }

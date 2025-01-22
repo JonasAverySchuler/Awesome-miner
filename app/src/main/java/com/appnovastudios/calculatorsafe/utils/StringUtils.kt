@@ -1,7 +1,7 @@
-package com.example.calculatorsafe.utils
+package com.appnovastudios.calculatorsafe.utils
 
 import android.content.Context
-import com.example.calculatorsafe.FileManager
+import com.appnovastudios.calculatorsafe.FileManager
 
 object StringUtils {
 

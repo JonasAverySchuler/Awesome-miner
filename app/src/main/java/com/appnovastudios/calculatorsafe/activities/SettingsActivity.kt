@@ -7,7 +7,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import com.example.calculatorsafe.BuildConfig
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.helpers.PreferenceHelper
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
 
 class SettingsActivity: AppCompatActivity() {
 

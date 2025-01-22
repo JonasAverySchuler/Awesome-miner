@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.activities
+package com.appnovastudios.calculatorsafe.activities
 
 import android.content.Intent
 import android.net.Uri
@@ -7,12 +7,12 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
-import com.example.calculatorsafe.FileManager
+import com.appnovastudios.calculatorsafe.FileManager
+import com.appnovastudios.calculatorsafe.helpers.DialogHelper
+import com.appnovastudios.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.adapters.MediaPagerAdapter
-import com.example.calculatorsafe.helpers.DialogHelper
-import com.example.calculatorsafe.utils.FileUtils
 import java.io.File
 
 class MediaViewActivity : AppCompatActivity() {

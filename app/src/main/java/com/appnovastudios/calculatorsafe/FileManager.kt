@@ -1,8 +1,8 @@
-package com.example.calculatorsafe
+package com.appnovastudios.calculatorsafe
 
 import android.content.Context
+import com.appnovastudios.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.utils.FileUtils
 import com.google.gson.Gson
 import java.io.File
 

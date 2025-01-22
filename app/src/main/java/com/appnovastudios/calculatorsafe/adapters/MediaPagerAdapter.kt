@@ -10,7 +10,7 @@ import android.widget.ProgressBar
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.utils.EncryptionUtils.decryptImage
+import com.appnovastudios.calculatorsafe.utils.EncryptionUtils.decryptImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

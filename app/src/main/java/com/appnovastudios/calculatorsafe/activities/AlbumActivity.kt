@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.activities
+package com.appnovastudios.calculatorsafe.activities
 
 import android.app.Activity
 import android.content.Intent
@@ -16,17 +16,17 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.FileManager
-import com.example.calculatorsafe.FileManager.getAlbums
+import com.appnovastudios.calculatorsafe.FileManager
+import com.appnovastudios.calculatorsafe.FileManager.getAlbums
+import com.appnovastudios.calculatorsafe.helpers.DialogHelper
+import com.appnovastudios.calculatorsafe.helpers.PermissionHelper.checkAndRequestPermissions
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper.getAlbumId
+import com.appnovastudios.calculatorsafe.utils.FileUtils
+import com.appnovastudios.calculatorsafe.utils.FileUtils.accessUserImages
+import com.appnovastudios.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.example.calculatorsafe.R
 import com.example.calculatorsafe.adapters.EncryptedImageAdapter
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.helpers.DialogHelper
-import com.example.calculatorsafe.helpers.PermissionHelper.checkAndRequestPermissions
-import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
-import com.example.calculatorsafe.utils.FileUtils
-import com.example.calculatorsafe.utils.FileUtils.accessUserImages
-import com.example.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 

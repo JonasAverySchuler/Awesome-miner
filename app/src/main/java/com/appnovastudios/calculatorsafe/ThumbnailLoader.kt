@@ -1,9 +1,9 @@
-package com.example.calculatorsafe
+package com.appnovastudios.calculatorsafe
 
 import android.graphics.Bitmap
 import android.widget.ImageView
+import com.appnovastudios.calculatorsafe.utils.EncryptionUtils
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.utils.EncryptionUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

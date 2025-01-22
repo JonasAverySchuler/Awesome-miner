@@ -31,10 +31,10 @@
             android:theme="@style/AppTheme">
         </activity>
         <activity
-            android:name=".activities.AlbumActivity"
+            android:name="com.appnovastudios.calculatorsafe.activities.AlbumActivity"
             android:theme="@style/AppTheme"/>
         <activity
-            android:name=".activities.PasscodeSetupActivity"
+            android:name="com.appnovastudios.calculatorsafe.activities.PasscodeSetupActivity"
             android:theme="@style/AppTheme"/>
         <activity
             android:name="com.appnovastudios.calculatorsafe.activities.CalculatorActivity"
@@ -46,7 +46,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".activities.MediaViewActivity"
+            android:name="com.appnovastudios.calculatorsafe.activities.MediaViewActivity"
             android:theme="@style/AppTheme"/>
         <activity
             android:name=".activities.SettingsActivity"

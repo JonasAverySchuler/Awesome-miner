@@ -8,10 +8,9 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
 import com.example.calculatorsafe.BuildConfig
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.activities.PasscodeSetupActivity
-import com.example.calculatorsafe.helpers.PreferenceHelper
 import java.util.Locale
 import kotlin.math.pow
 

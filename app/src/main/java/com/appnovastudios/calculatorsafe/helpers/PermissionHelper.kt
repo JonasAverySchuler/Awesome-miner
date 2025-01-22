@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.helpers
+package com.appnovastudios.calculatorsafe.helpers
 
 import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.Manifest.permission.READ_MEDIA_VIDEO

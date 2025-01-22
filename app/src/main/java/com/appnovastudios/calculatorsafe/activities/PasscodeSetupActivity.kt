@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.activities
+package com.appnovastudios.calculatorsafe.activities
 
 import android.os.Bundle
 import android.view.View
@@ -7,10 +7,10 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.appnovastudios.calculatorsafe.helpers.DialogHelper
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
+import com.appnovastudios.calculatorsafe.utils.StringUtils.isPasswordValid
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.helpers.DialogHelper
-import com.example.calculatorsafe.helpers.PreferenceHelper
-import com.example.calculatorsafe.utils.StringUtils.isPasswordValid
 
 class PasscodeSetupActivity: AppCompatActivity() {
 

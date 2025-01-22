@@ -12,12 +12,12 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.calculatorsafe.FileManager
+import com.appnovastudios.calculatorsafe.FileManager
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
+import com.appnovastudios.calculatorsafe.ThumbnailLoader.loadThumbnailAsync
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.helpers.PreferenceHelper.getAlbumId
-import com.example.calculatorsafe.utils.FileUtils.getEncryptedFilesFromMetadata
+import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper.getAlbumId
+import com.appnovastudios.calculatorsafe.utils.FileUtils.getEncryptedFilesFromMetadata
 import java.io.File
 
 class AlbumAdapter(
