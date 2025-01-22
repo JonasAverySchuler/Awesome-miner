@@ -71,7 +71,39 @@ object EncryptionUtils {
         }
     }
 
-    fun saveEncryptedImageToStorage(context: Context, encryptedImage: ByteArray, targetAlbum: Album?, encryptedFileName: String): String {
+    fun encryptVideo(file: File): ByteArray? {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+
+        // Early return if the file doesn't exist or is empty
+        if (!file.exists() || file.length() == 0L) {
+            Log.e("Encryption", "File does not exist or is empty: ${file.absolutePath}")
+            return null
+        }
+
+        try {
+            // Initialize the cipher for AES in CBC mode with PKCS7 padding
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+
+            // Generate the IV from the cipher
+            val iv = cipher.iv
+
+            // Read the file into a byte array
+            val fileBytes = file.readBytes()
+
+            // Encrypt the file bytes
+            val encryptedData = cipher.doFinal(fileBytes)
+
+            // Return the IV + encrypted data
+            return iv + encryptedData
+
+        } catch (e: Exception) {
+            Log.e("Encryption", "Error during video encryption: ${e.message}")
+            return null
+        }
+    }
+
+    fun saveEncryptedFileToStorage(context: Context, encryptedImage: ByteArray, targetAlbum: Album?, encryptedFileName: String): String {
         val albumsDir = getAlbumsDir(context)
         if (!albumsDir.exists()) {
             albumsDir.mkdirs() // Create the albums directory if it doesn't exist

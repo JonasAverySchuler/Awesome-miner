@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
-import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
@@ -26,6 +25,7 @@ import java.net.URLConnection
 import java.util.UUID
 
 object FileUtils {
+    private val TAG = "FileUtils"
 
     data class Metadata(
         @SerializedName("album_name")
@@ -211,7 +211,35 @@ object FileUtils {
         return imageFiles.size
     }
 
-    fun getFileNameFromUri(context: Context, uri: Uri): String? {
+    private fun getFileFromUri(context: Context, uri: Uri): File? {
+        return when (uri.scheme) {
+            "file" -> File(uri.path ?: return null) // Handle file:// URIs
+            "content" -> {
+                getFileFromContentUri(context, uri)
+            }
+            else -> null
+        }
+    }
+
+    private fun getFileFromContentUri(context: Context, uri: Uri): File? {
+        val contentResolver = context.contentResolver
+        val fileName = getFileNameFromUri(context, uri) ?: return null
+        val tempFile = File(context.cacheDir, fileName)
+
+        return try {
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            tempFile
+        } catch (e: Exception) {
+            Log.e("FileUtils", "Error copying content URI to file: ${e.message}")
+            null
+        }
+    }
+
+    private fun getFileNameFromUri(context: Context, uri: Uri): String? {
         val contentResolver = context.contentResolver
         val cursor = contentResolver.query(uri, null, null, null, null)
         cursor?.use {
@@ -223,7 +251,7 @@ object FileUtils {
         return null // Return null if the name cannot be found
     }
 
-    fun getFilePathFromUri(context: Context, mediaUri: Uri): String? {
+    private fun getFilePathFromUri(context: Context, mediaUri: Uri): String? {
         var filePath: String? = null
 
         // Check if URI is a Document URI
@@ -261,7 +289,7 @@ object FileUtils {
         return filePath
     }
 
-    fun deleteFile(filePath: String): Boolean {
+    private fun deleteFile(filePath: String): Boolean {
         val file = File(filePath)
 
         return if (file.exists() && file.canWrite()) {
@@ -291,67 +319,120 @@ object FileUtils {
         pickMediaLauncher.launch(pickMediaIntent)
     }
 
+    private fun handleImage(context: Context, mediaUri: Uri, targetAlbum: Album): String {
+        val contentResolver = context.contentResolver
+        val bitmap = getBitmapFromUri(contentResolver, mediaUri)
+        if (bitmap == null) {
+            Log.e("MediaHandler", "Failed to get bitmap from URI: $mediaUri")
+            return ""
+        }
+
+        // Encrypt the image
+        val encryptedImage = EncryptionUtils.encryptImage(bitmap)
+        if (encryptedImage == null) {
+            Log.e("MediaHandler", "Failed to encrypt image")
+            return ""
+        }
+
+        val originalFileName = getFileNameFromUri(context, mediaUri) ?: "unknown_${System.currentTimeMillis()}.jpg"
+        val encryptedFileName = "enc_${System.currentTimeMillis()}.jpg"
+
+        val newFilePath = EncryptionUtils.saveEncryptedFileToStorage(
+            context,
+            encryptedImage,
+            targetAlbum,
+            encryptedFileName
+        )
+
+        val filePath = getFilePathFromUri(context, mediaUri) ?: ""
+
+        // Delete Original Media if preference set
+        if (PreferenceHelper.getDeleteOriginal(context)) {
+
+            if(!deleteFile(filePath)) {
+                Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
+            }
+        }
+
+        // Update Metadata
+        val fileDetail = FileDetail(
+            originalFileName = originalFileName,
+            encryptedFileName = encryptedFileName,
+            mimeType = "image",
+            createdAt = System.currentTimeMillis().toString()
+        )
+        val albumPath = targetAlbum.pathString
+        val existingMetadata = readMetadataFile(albumPath).toMutableList()
+        existingMetadata.add(fileDetail)
+        createOrUpdateMetadataFile(albumPath, existingMetadata)
+
+        return newFilePath
+    }
+
+    private fun handleVideo(context: Context, mediaUri: Uri, targetAlbum: Album): String {
+        val videoFile = getFileFromUri(context, mediaUri) ?: return ""
+
+        //Encrypt the video
+        val encryptedVideo = EncryptionUtils.encryptVideo(videoFile)
+        if (encryptedVideo == null) {
+            Log.e("MediaHandler", "Failed to encrypt video")
+            return ""
+        }
+
+        val originalFileName = getFileNameFromUri(context, mediaUri) ?: "unknown_${System.currentTimeMillis()}.mp4"
+        val encryptedFileName = "enc_${System.currentTimeMillis()}.mp4"
+
+        val newFilePath = EncryptionUtils.saveEncryptedFileToStorage(
+            context,
+            encryptedVideo,
+            targetAlbum,
+            encryptedFileName
+        )
+
+        val filePath = getFilePathFromUri(context, mediaUri) ?: ""
+        //Delete Original Media if preference set
+        if (PreferenceHelper.getDeleteOriginal(context)) {
+            if(!deleteFile(filePath)) {
+                Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
+            }
+        }
+
+        // Update Metadata
+        val fileDetail = FileDetail(
+            originalFileName = originalFileName,
+            encryptedFileName = encryptedFileName,
+            mimeType = "video",
+            createdAt = System.currentTimeMillis().toString()
+        )
+        val albumPath = targetAlbum.pathString
+        val existingMetadata = readMetadataFile(albumPath).toMutableList()
+        existingMetadata.add(fileDetail)
+        createOrUpdateMetadataFile(albumPath, existingMetadata)
+
+        return newFilePath
+    }
+
     //Returns filepath of new file
     fun handleSelectedMedia(context: Context, mediaUri: Uri, targetAlbum: Album): String {
         try {
-            // Step 1: Get Bitmap from URI
+            // Determine MIME type
             val contentResolver = context.contentResolver
-            val bitmap = getBitmapFromUri(contentResolver, mediaUri)
-            if (bitmap == null) {
-                Log.e("MediaHandler", "Failed to get bitmap from URI: $mediaUri")
+
+            val mimeType = contentResolver.getType(mediaUri)
+            if (mimeType.isNullOrEmpty()) {
+                Log.e("MediaHandler", "Unable to determine MIME type for URI: $mediaUri")
                 return ""
             }
 
-            // Step 2: Encrypt the Image
-            val encryptedImage = EncryptionUtils.encryptImage(bitmap)
-            if (encryptedImage == null) {
-                Log.e("MediaHandler", "Failed to encrypt image")
-                return ""
+            // Handle image or video based on MIME type
+            return if (mimeType.startsWith("image/")) {
+                handleImage(context, mediaUri, targetAlbum)
+            } else if (mimeType.startsWith("video/")) {
+                handleVideo(context, mediaUri, targetAlbum)
+            } else {
+                Log.e("MediaHandler", "Unsupported media type: $mimeType")
+                ""
             }
-
-            // Step 3: Retrieve File Name and MIME Type
-            val originalFileName = getFileNameFromUri(context, mediaUri) ?: "unknown_${System.currentTimeMillis()}.jpg"
-            val mimeType = contentResolver.getType(mediaUri) ?: "image/jpeg"
-            val encryptedFileName = "enc_${System.currentTimeMillis()}"
-
-            // Step 4: Save the Encrypted Image
-            val newFilePath = EncryptionUtils.saveEncryptedImageToStorage(
-                context,
-                encryptedImage,
-                targetAlbum,
-                encryptedFileName
-            )
-
-            Log.d("MediaHandler", "MediaUri: $mediaUri")
-
-            val filePath = getFilePathFromUri(context, mediaUri) ?: ""
-            Log.d("MediaHandler", "File Path from getfilepathfromuri: $filePath")
-
-            // Step 5: Delete Original Media if preference set
-
-            val isExternalStorageManager = Environment.isExternalStorageManager()
-            Log.e("MediaHandler", "isExternalStorageManager: $isExternalStorageManager")
-
-            if (PreferenceHelper.getDeleteOriginal(context)) {
-
-                if(!deleteFile(filePath)) {
-                    Log.e("MediaHandler", "In content scheme : Failed to delete original media at URI: $mediaUri")
-                }
-            }
-
-            // Step 6: Update Metadata
-            val fileDetail = FileDetail(
-                originalFileName = originalFileName,
-                encryptedFileName = encryptedFileName,
-                mimeType = if (mimeType.startsWith("image")) "image" else "video",
-                createdAt = System.currentTimeMillis().toString()
-            )
-            val albumPath = targetAlbum.pathString
-            val existingMetadata = readMetadataFile(albumPath).toMutableList()
-            existingMetadata.add(fileDetail)
-            createOrUpdateMetadataFile(albumPath, existingMetadata)
-
-            return newFilePath
         } catch (e: Exception) {
             Log.e("MediaHandler", "Error handling selected media: ${e.message}", e)
             // Optionally show an error message to the user
