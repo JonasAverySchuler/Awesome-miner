@@ -8,11 +8,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.appnovastudios.calculatorsafe.FileManager
+import com.appnovastudios.calculatorsafe.data.MediaItemWrapper
 import com.appnovastudios.calculatorsafe.helpers.DialogHelper
 import com.appnovastudios.calculatorsafe.utils.FileUtils
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.adapters.MediaItemWrapper
-import com.example.calculatorsafe.adapters.MediaPagerAdapter
+import com.appnovastudios.calculatorsafe.adapters.MediaPagerAdapter
 import java.io.File
 
 class MediaViewActivity : AppCompatActivity() {

@@ -25,7 +25,7 @@ import com.appnovastudios.calculatorsafe.utils.FileUtils
 import com.appnovastudios.calculatorsafe.utils.FileUtils.accessUserImages
 import com.appnovastudios.calculatorsafe.utils.FileUtils.getImageFileCountFromAlbum
 import com.example.calculatorsafe.R
-import com.example.calculatorsafe.adapters.EncryptedImageAdapter
+import com.appnovastudios.calculatorsafe.adapters.EncryptedFileAdapter
 import com.example.calculatorsafe.data.Album
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
@@ -33,7 +33,7 @@ import java.io.File
 class AlbumActivity : AppCompatActivity() {
     private lateinit var albumDirectoryPath: String
     private lateinit var album: Album
-    private lateinit var adapter: EncryptedImageAdapter
+    private lateinit var adapter: EncryptedFileAdapter
     private lateinit var selectionModeCallback: OnBackPressedCallback
     private lateinit var toolbar: Toolbar
     private lateinit var mediaViewActivityResultLauncher: ActivityResultLauncher<Intent>
@@ -78,7 +78,7 @@ class AlbumActivity : AppCompatActivity() {
         }
         onBackPressedDispatcher.addCallback(this, selectionModeCallback)
 
-        adapter = EncryptedImageAdapter(
+        adapter = EncryptedFileAdapter(
             encryptedFiles.toMutableList(),
             itemWidth,
             { index ->
@@ -188,7 +188,7 @@ class AlbumActivity : AppCompatActivity() {
             R.id.action_delete -> {
                 // Handle delete action
                 when (adapter.mode) {
-                    EncryptedImageAdapter.Mode.SELECTION -> {
+                    EncryptedFileAdapter.Mode.SELECTION -> {
                         if (adapter.selectedItems.isNotEmpty()) {
                             DialogHelper.showConfirmationDialog(this, "Delete Files",
                                 "Are you sure you want to delete the selected files?","Confirm", "Cancel",
@@ -197,7 +197,7 @@ class AlbumActivity : AppCompatActivity() {
                                 {})
                         }
                     }
-                    EncryptedImageAdapter.Mode.VIEWING -> {
+                    EncryptedFileAdapter.Mode.VIEWING -> {
                         enterSelectionMode()
                     }
                 }
@@ -207,7 +207,7 @@ class AlbumActivity : AppCompatActivity() {
             R.id.action_move -> {
                 // Handle delete action
                 when (adapter.mode) {
-                    EncryptedImageAdapter.Mode.SELECTION -> {
+                    EncryptedFileAdapter.Mode.SELECTION -> {
                         if (adapter.selectedItems.isNotEmpty()) {
                             val albums = getAlbums(this).toMutableList()
                             val albumsNew = albums.filter { it.pathString != album.pathString } //dont show current album as an option
@@ -225,7 +225,7 @@ class AlbumActivity : AppCompatActivity() {
                             }
                         }
                     }
-                    EncryptedImageAdapter.Mode.VIEWING -> {
+                    EncryptedFileAdapter.Mode.VIEWING -> {
                         enterSelectionMode()
                     }
                 }
@@ -233,7 +233,7 @@ class AlbumActivity : AppCompatActivity() {
             }
             R.id.action_restore -> {
                 when (adapter.mode) {
-                    EncryptedImageAdapter.Mode.SELECTION -> {
+                    EncryptedFileAdapter.Mode.SELECTION -> {
                         if (adapter.selectedItems.isNotEmpty()) {
                             DialogHelper.showConfirmationDialog(this, "Restore Files",
                                 "Are you sure you want to restore the selected files?","Confirm", "Cancel",
@@ -242,7 +242,7 @@ class AlbumActivity : AppCompatActivity() {
                                 })
                         }
                     }
-                    EncryptedImageAdapter.Mode.VIEWING -> {
+                    EncryptedFileAdapter.Mode.VIEWING -> {
                         enterSelectionMode()
                     }
                 }
@@ -253,7 +253,7 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun enterSelectionMode() {
-        adapter.mode = EncryptedImageAdapter.Mode.SELECTION
+        adapter.mode = EncryptedFileAdapter.Mode.SELECTION
         selectionModeCallback.isEnabled = true
         toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.close)
         toolbar.setNavigationOnClickListener {
@@ -270,7 +270,7 @@ class AlbumActivity : AppCompatActivity() {
     }
 
     private fun exitSelectionMode() {
-        adapter.mode = EncryptedImageAdapter.Mode.VIEWING
+        adapter.mode = EncryptedFileAdapter.Mode.VIEWING
         selectionModeCallback.isEnabled = false
         toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.back)
         toolbar.setNavigationOnClickListener {

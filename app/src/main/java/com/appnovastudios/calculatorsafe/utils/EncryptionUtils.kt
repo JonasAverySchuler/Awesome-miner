@@ -9,8 +9,8 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import com.appnovastudios.calculatorsafe.data.FileDetail
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.data.FileDetail
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -103,6 +103,35 @@ object EncryptionUtils {
         }
     }
 
+    suspend fun decryptVideo(encryptedBytes: ByteArray): ByteArray? = withContext(Dispatchers.IO) {
+        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
+
+        try {
+            // Initialize the cipher for AES in CBC mode with PKCS7 padding
+            val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
+
+            // Extract the IV from the encryptedBytes
+            val ivSize = cipher.blockSize // Typically 16 bytes for AES
+            if (encryptedBytes.size <= ivSize) {
+                Log.e("Decryption", "Invalid encrypted data. Too short to contain IV and data.")
+                return@withContext null
+            }
+            val iv = encryptedBytes.copyOfRange(0, ivSize)
+            val encryptedData = encryptedBytes.copyOfRange(ivSize, encryptedBytes.size)
+
+            // Initialize the cipher in DECRYPT_MODE with the IV
+            val ivSpec = IvParameterSpec(iv)
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
+
+            // Decrypt the data
+            return@withContext cipher.doFinal(encryptedData)
+
+        } catch (e: Exception) {
+            Log.e("Decryption", "Error during video decryption: ${e.message}")
+            null
+        }
+    }
+
     fun saveEncryptedFileToStorage(context: Context, encryptedImage: ByteArray, targetAlbum: Album?, encryptedFileName: String): String {
         val albumsDir = getAlbumsDir(context)
         if (!albumsDir.exists()) {
@@ -121,50 +150,6 @@ object EncryptionUtils {
         }
 
         return file.absolutePath
-    }
-
-    fun decryptFile(file: File): File? {
-        val secretKey = KeystoreUtils.getOrCreateGlobalKey()
-        val iv = ByteArray(16) // 16 bytes for the IV
-
-        // Read the IV
-        file.inputStream().use { inputStream ->
-            val bytesRead = inputStream.read(iv)
-            if (bytesRead != 16) {
-                throw IllegalArgumentException("Unable to read IV, bytes read: $bytesRead")
-            }
-        }
-
-        // Read the encrypted data
-        val encryptedData = file.inputStream().use { inputStream ->
-            inputStream.skip(16) // Skip the IV
-            inputStream.readBytes()
-        }
-
-        // Initialize the cipher
-        val cipher = Cipher.getInstance("AES/CBC/PKCS7Padding")
-        val ivSpec = IvParameterSpec(iv)
-
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec)
-
-        try {
-            // Perform decryption
-            val decryptedData = cipher.doFinal(encryptedData)
-
-            // Check if decrypted data is empty
-            if (decryptedData.isEmpty()) {
-                throw IllegalArgumentException("Decrypted data is empty.")
-            }
-
-            // Create a temporary file for the decrypted content
-            val decryptedFile = File(file.parent, "decrypted_${file.nameWithoutExtension}")
-            decryptedFile.writeBytes(decryptedData)
-
-            return decryptedFile
-        } catch (e: Exception) {
-            Log.e("Decryption", "Error during decryption: ${e.message}")
-            return null
-        }
     }
 
     suspend fun decryptImage(file: File, downscale: Boolean = true): Bitmap? = withContext(Dispatchers.IO) {

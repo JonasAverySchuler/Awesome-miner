@@ -3,19 +3,17 @@ package com.appnovastudios.calculatorsafe.utils
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
-import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
-import androidx.core.net.toUri
+import com.appnovastudios.calculatorsafe.data.FileDetail
 import com.appnovastudios.calculatorsafe.helpers.PreferenceHelper
 import com.appnovastudios.calculatorsafe.utils.EncryptionUtils.getBitmapFromUri
-import com.example.calculatorsafe.adapters.MediaItemWrapper
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.data.FileDetail
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import org.json.JSONArray
@@ -33,34 +31,15 @@ object FileUtils {
         var files: MutableList<FileDetail>
     )
 
-    fun isImageFile(file: File): Boolean {
+    private fun isImageFile(file: File): Boolean {
         // Check if the file extension or MIME type is for an image
         val mimeType = getMimeType(file)
         return mimeType.startsWith("image") && !file.name.endsWith(".meta")  // exclude metadata files
     }
 
-    fun getMimeType(file: File): String {
+    private fun getMimeType(file: File): String {
         // Logic to get MIME type (could be based on file extension or using a MIME detection library)
         return URLConnection.guessContentTypeFromName(file.name) ?: "unknown"
-    }
-
-    fun getFileType(file: File): MediaItemWrapper? {
-        val fileExtension = file.extension.lowercase()
-
-        // Use MimeTypeMap to get MIME type
-        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
-
-        return when {
-            mimeType?.startsWith("image") == true -> {
-                // It's an image
-                MediaItemWrapper.Image(file.absolutePath) // Create a media item for image
-            }
-            mimeType?.startsWith("video") == true -> {
-                // It's a video
-                MediaItemWrapper.Video(file.toUri()) // Create a media item for video
-            }
-            else -> null
-        }
     }
 
     fun readMetadataFile(albumPath: String): List<FileDetail> {
@@ -79,7 +58,8 @@ object FileUtils {
                     originalFileName = fileObject.getString("original_name"),
                     encryptedFileName = fileObject.getString("encrypted_name"),
                     mimeType = fileObject.getString("type"),
-                    createdAt = fileObject.getString("created_at")
+                    createdAt = fileObject.getString("created_at"),
+                    thumbnailFileName =  fileObject.getString("thumbnail_name")
                 )
             )
         }
@@ -158,6 +138,7 @@ object FileUtils {
             fileObject.put("encrypted_name", fileDetail.encryptedFileName)
             fileObject.put("type", fileDetail.mimeType)
             fileObject.put("created_at", fileDetail.createdAt)
+            fileObject.put("thumbnail_name", fileDetail.thumbnailFileName)
             filesArray.put(fileObject)
         }
 
@@ -359,7 +340,8 @@ object FileUtils {
             originalFileName = originalFileName,
             encryptedFileName = encryptedFileName,
             mimeType = "image",
-            createdAt = System.currentTimeMillis().toString()
+            createdAt = System.currentTimeMillis().toString(),
+            thumbnailFileName = ""
         )
         val albumPath = targetAlbum.pathString
         val existingMetadata = readMetadataFile(albumPath).toMutableList()
@@ -379,8 +361,21 @@ object FileUtils {
             return ""
         }
 
+        //Get a thumbnail for the video
+        val retriever = MediaMetadataRetriever()
+        retriever.setDataSource(videoFile.absolutePath)
+        val thumbnailBitmap = retriever.getFrameAtTime(0)
+        val encryptedThumbnail = EncryptionUtils.encryptImage(thumbnailBitmap)
+        if (encryptedThumbnail == null) {
+            Log.e("MediaHandler", "Failed to encrypt thumbnail")
+            retriever.release()
+            return ""
+        }
+        retriever.release()
+
         val originalFileName = getFileNameFromUri(context, mediaUri) ?: "unknown_${System.currentTimeMillis()}.mp4"
-        val encryptedFileName = "enc_${System.currentTimeMillis()}.mp4"
+        val timeStamp = System.currentTimeMillis()
+        val encryptedFileName = "enc_${timeStamp}.mp4"
 
         val newFilePath = EncryptionUtils.saveEncryptedFileToStorage(
             context,
@@ -388,6 +383,13 @@ object FileUtils {
             targetAlbum,
             encryptedFileName
         )
+
+        val thumbnailFileName = "enc_${timeStamp}_thumbnail.jpg"
+        EncryptionUtils.saveEncryptedFileToStorage(
+            context,
+            encryptedThumbnail,
+            targetAlbum,
+            thumbnailFileName)
 
         val filePath = getFilePathFromUri(context, mediaUri) ?: ""
         //Delete Original Media if preference set
@@ -402,7 +404,8 @@ object FileUtils {
             originalFileName = originalFileName,
             encryptedFileName = encryptedFileName,
             mimeType = "video",
-            createdAt = System.currentTimeMillis().toString()
+            createdAt = System.currentTimeMillis().toString(),
+            thumbnailFileName = thumbnailFileName
         )
         val albumPath = targetAlbum.pathString
         val existingMetadata = readMetadataFile(albumPath).toMutableList()

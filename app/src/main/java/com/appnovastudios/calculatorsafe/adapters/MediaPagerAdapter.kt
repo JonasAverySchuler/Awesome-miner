@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.adapters
+package com.appnovastudios.calculatorsafe.adapters
 
 import android.net.Uri
 import android.view.Gravity
@@ -10,18 +10,13 @@ import android.widget.ProgressBar
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
+import com.appnovastudios.calculatorsafe.data.MediaItemWrapper
 import com.appnovastudios.calculatorsafe.utils.EncryptionUtils.decryptImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.io.File
-
-// Data class to represent image or video
-sealed class MediaItemWrapper {
-    data class Image(val path: String) : MediaItemWrapper()
-    data class Video(val uri: Uri) : MediaItemWrapper()
-}
 
 class MediaPagerAdapter(
     private val mediaItems: MutableList<MediaItemWrapper>

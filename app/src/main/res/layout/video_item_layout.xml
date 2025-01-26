@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/video_card_view"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/light_gray"
+    android:background="@color/light_gray">
+
+    <!-- FrameLayout to hold both the ImageView and ProgressBar -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- Your ImageView (photo) -->
+        <ImageView
+            android:id="@+id/video_image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
+            android:background="@color/light_gray"/>
+
+        <!-- ProgressBar centered inside FrameLayout -->
+        <ProgressBar
+            android:id="@+id/video_progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:indeterminate="true"/>
+
+        <!-- Overlay-->
+        <View
+            android:id="@+id/video_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:visibility="gone"/>
+
+    </FrameLayout>
+</androidx.cardview.widget.CardView>

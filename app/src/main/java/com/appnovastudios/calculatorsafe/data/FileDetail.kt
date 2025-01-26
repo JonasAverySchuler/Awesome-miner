@@ -1,4 +1,4 @@
-package com.example.calculatorsafe.data
+package com.appnovastudios.calculatorsafe.data
 
 import com.google.gson.annotations.SerializedName
 
@@ -11,4 +11,6 @@ data class FileDetail(
     val mimeType: String,
     @SerializedName("created_at")
     val createdAt: String,
+    @SerializedName("thumbnail_name")
+    val thumbnailFileName: String
 )

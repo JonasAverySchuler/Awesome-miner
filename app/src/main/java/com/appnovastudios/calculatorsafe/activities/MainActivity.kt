@@ -33,7 +33,7 @@ import com.example.calculatorsafe.R
 import com.example.calculatorsafe.activities.SettingsActivity
 import com.example.calculatorsafe.adapters.AlbumAdapter
 import com.example.calculatorsafe.data.Album
-import com.example.calculatorsafe.data.FileDetail
+import com.appnovastudios.calculatorsafe.data.FileDetail
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.gson.Gson

@@ -1,6 +1,8 @@
-package com.example.calculatorsafe.data
+package com.appnovastudios.calculatorsafe.data
 
-sealed class MediaItem {
-    data class Image(val path: String) : MediaItem()
-    data class Video(val path: String) : MediaItem()
+import android.net.Uri
+
+sealed class MediaItemWrapper {
+    data class Image(val path: String) : MediaItemWrapper()
+    data class Video(val uri: Uri) : MediaItemWrapper()
 }
